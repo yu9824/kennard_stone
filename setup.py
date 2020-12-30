@@ -5,7 +5,7 @@ with open('requirements.txt') as requirements_file:
 
 setup(
     name='kennard_stone',
-    version='0.0.1',
+    version='0.0.2',
     description='',
     author='yu-9824',
     author_email='yu.9824@gmail.com',
