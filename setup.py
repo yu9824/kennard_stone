@@ -10,7 +10,7 @@ setup(
     author='yu-9824',
     author_email='yu.9824@gmail.com',
     install_requires=install_requirements,
-    url='https://github.com/yu-9824/applicability_domain',
+    url='https://github.com/yu-9824/kennard_stone',
     license=license,
     packages=find_packages(exclude=['example'])
 )

@@ -5,7 +5,6 @@ from math import floor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.metrics import make_scorer, get_scorer
 from sklearn.base import clone  # 新しいけどパラメータが一緒のestimatorを作成
-from ngboost import NGBRegressor
 
 '''
 x : 特徴量
@@ -15,6 +14,62 @@ selected_sample_numbers : selected sample numbers (training data)
 remaining_sample_numbers : remaining sample numbers (test data)
 '''
 
+class KennardStone:
+    def __init__(self):
+        pass
+
+    def __call__(self, X):
+        # np.ndarray化
+        X = np.array(X)
+
+        # もとのXを取っておく
+        self.original_X = X.copy()
+
+        # 全ての組成に対してそれぞれの平均との距離の二乗を配列として得る． (サンプル数の分だけ存在)
+        self.distance_to_ave = np.sum((X - X.mean(axis = 0)) ** 2, axis = 1)
+
+        # 最大値を取るサンプル　(平均からの距離が一番遠い) のindex_numberを保存
+        i_farthest = np.argmax(self.distance_to_ave)
+
+        # 抜き出した (train用) サンプルのindex_numberを保存しとくリスト
+        i_selected = [i_farthest]
+
+        # まだ抜き出しておらず，残っているサンプル (test用) サンプルのindex_numberを保存しておくリスト
+        i_remaining = np.arange(len(X))
+
+        # 抜き出した (train用) サンプルに選ばれたサンプルをtrain用のものから削除
+        X = np.delete(X, i_selected, axis = 0)
+        i_remaining = np.delete(i_remaining, i_selected, axis = 0)
+
+        return self._sort(X, i_selected, i_remaining)
+
+    def _sort(self, X, i_selected, i_remaining):
+        # 選ばれたサンプル (x由来)
+        samples_selected = self.original_X[i_selected, :]
+
+        # まだ選択されていない各サンプルにおいて、これまで選択されたすべてのサンプルとの間でユークリッド距離を計算し，その最小の値を「代表長さ」とする．
+        min_distance_to_samples_selected = np.min(np.sum((np.expand_dims(samples_selected, 1) - np.expand_dims(X, 0)) ** 2, axis = 2), axis = 0)
+
+        # 最大値を取るサンプル　(距離が一番遠い) のindex_numberを保存
+        i_farthest = np.argmax(min_distance_to_samples_selected)
+
+        # 選んだとして記録する
+        i_selected.append(i_remaining[i_farthest])
+        X = np.delete(X, i_farthest, axis = 0)
+        i_remaining = np.delete(i_remaining, i_farthest, 0)
+
+        if len(i_remaining):   # まだ残っているなら再帰
+            return self._sort(X, i_selected, i_remaining)
+        else:   # もうないなら終える
+            return i_selected
+
+
+
+
+
+
+
+'''
 def cross_val_score_KS(estimator, X, y, **options):
     cv = int(options['cv']) if 'cv' in options else 5
     scoring = get_scorer(options['scoring']) if 'scoring' in options else mean_squared_error
@@ -47,12 +102,11 @@ def cross_val_score_KS(estimator, X, y, **options):
         X_train = X[boolean, :]
         y_train = y[boolean]
 
-        '''
-        # make_scorerのobjectをうけとるのでこの操作は不要．したのメソッドで置換される．
-        estimator.fit(X_train, y_train)
-        y_pred_on_test = estimator.predict(X_test)
-        scores.append(scoring(y_test, y_pred_on_test))
-        '''
+        # # make_scorerのobjectをうけとるのでこの操作は不要．したのメソッドで置換される．
+        # estimator.fit(X_train, y_train)
+        # y_pred_on_test = estimator.predict(X_test)
+        # scores.append(scoring(y_test, y_pred_on_test))
+
         estimator = clone(estimator)
         if isinstance(estimator, NGBRegressor):
             X_train1, X_train2, y_train1, y_train2 = train_test_split_KS(X_train, y_train, test_size = 0.1)
@@ -135,37 +189,10 @@ def extract(array, train_indexes, test_indexes):
         return array.iloc[train_indexes], array.iloc[test_indexes]
     else:
         return array[train_indexes], array[test_indexes]
-
+'''
 
 if __name__ == '__main__':
-    from sklearn.ensemble import RandomForestRegressor
-    from sklearn.datasets import load_boston
-    from sklearn.model_selection import train_test_split
-
-    rf = RandomForestRegressor(random_state = 334, n_estimators = 100)
-
-    boston = load_boston()
-    X = pd.DataFrame(boston['data'], columns = boston['feature_names'])
-    y = pd.Series(boston['target'], name = 'PRICE')
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 334)
-
-    # from pdb import set_trace
-    # print(rf)
-    # scores = cross_val_score_KS(rf, X, y, cv = 5, scoring = mean_absolute_error)
-    rf.fit(X_train, y_train)
-    print(get_scorer('neg_mean_squared_error')(rf, X_test, y_test))
-    print(get_scorer(make_scorer(mean_squared_error))(rf, X_test, y_test))
-    print(get_scorer('neg_mean_squared_error'))
-    f = mean_squared_error
-    print(str(mean_squared_error))
-
-    # print(scores)
-    # print(cross_val_score_KS(rf, df.iloc[:, 1:], df.iloc[:, 0], cv = 5, scoring = mean_absolute_error))
+    pass
 
 
 
-    # a = np.expand_dims(np.arange(24).reshape(4, 6), 0)
-    # b = np.expand_dims(np.ones(30).reshape(5, 6), 1)
-
-    # print(a - b)
