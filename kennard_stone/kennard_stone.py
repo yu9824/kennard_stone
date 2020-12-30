@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from math import floor
+from math import ceil
 
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.metrics import make_scorer, get_scorer
@@ -17,8 +17,8 @@ remaining_sample_numbers : remaining sample numbers (test data)
 class KennardStone:
     def __init__(self):
         pass
-
-    def __call__(self, X):
+    
+    def _get_indexes(self, X):
         # np.ndarray化
         X = np.array(X)
 
@@ -26,10 +26,10 @@ class KennardStone:
         self.original_X = X.copy()
 
         # 全ての組成に対してそれぞれの平均との距離の二乗を配列として得る． (サンプル数の分だけ存在)
-        self.distance_to_ave = np.sum((X - X.mean(axis = 0)) ** 2, axis = 1)
+        distance_to_ave = np.sum((X - X.mean(axis = 0)) ** 2, axis = 1)
 
         # 最大値を取るサンプル　(平均からの距離が一番遠い) のindex_numberを保存
-        i_farthest = np.argmax(self.distance_to_ave)
+        i_farthest = np.argmax(distance_to_ave)
 
         # 抜き出した (train用) サンプルのindex_numberを保存しとくリスト
         i_selected = [i_farthest]
@@ -62,6 +62,107 @@ class KennardStone:
             return self._sort(X, i_selected, i_remaining)
         else:   # もうないなら終える
             return i_selected
+
+    def _extract(self, array, train_indexes, test_indexes):
+        if isinstance(array, pd.DataFrame):
+            return array.iloc[train_indexes], array.iloc[test_indexes]
+        else:
+            return array[train_indexes], array[test_indexes]
+
+    def train_test_split(self, X, *arrays, **kwargs):
+        if 'test_size' in kwargs:
+            test_size = kwargs['test_size']
+        elif 'train_size' in kwargs:
+            test_size = 1 - kwargs['train_size']
+        else:
+            test_size = 0.25
+
+        if 0 < test_size < 1:
+            pass
+        else:
+            raise ValueError('"test_size" or "train_size" is wrong.')
+        
+        # kennard stone
+        ks = KennardStone()
+        indexes = ks._get_indexes(X)
+
+        # trainとtestの境界のindexを求める．
+        i_border = ceil(len(X) * test_size)
+
+        # indexを切り分ける
+        test_indexes = indexes[:i_border]
+        train_indexes = indexes[i_border:]
+
+        # return用のリスト
+        lst_output = list(self._extract(X, train_indexes, test_indexes))
+
+        if len(arrays) != 0:
+            for ar in arrays:
+                if len(ar) == len(X):
+                    lst_output.extend(self._extract(ar, train_indexes, test_indexes))
+                else:
+                    raise TypeError('サイズが違う配列が含まれているので無理です．')
+        return lst_output
+
+    class KFold:
+        def __init__(self, n_splits = 5):
+            self.n_splits = n_splits
+
+        def split(self, X, y = None):
+            l = len(X)
+            if y is None:
+                pass
+            elif l != len(y):
+                raise TypeError('Length is not equal.')
+            
+            # Kennard Stone
+            ks = KennardStone()
+            indexes = ks._get_indexes(X)
+
+            # 境界
+            each_len = [(l + n) // self.n_splits for n in range(self.n_splits)]
+
+            # n_splitsなだけ分割する．
+            indexes_splited = []
+            i = 0
+            for el in each_len:
+                j = i + el
+                indexes_splited.append(indexes[i:j])
+                i = j
+            
+            indexes_train_test = []
+            for n in range(self.n_splits):
+                indexes_train_temp = []
+                for m in range(self.n_splits):
+                    if n == m:
+                        indexes_test = indexes_splited[m]
+                    else:
+                        indexes_train_temp.extend(indexes_splited[m])
+                indexes_train_test.append([indexes_train_temp, indexes_test])
+            return indexes_train_test
+
+    def cross_val_score(self, estimator, X, y, scoring = None, cv = 5):
+        if scoring is None:
+            scoring = make_scorer(lambda y1, y2: np.sqrt(mean_squared_error(y1, y2)))
+
+        scorer = get_scorer(scoring)
+        
+        scores = []
+        kf = self.KFold(n_splits = cv)
+        for i_train, i_test in kf.split(X, y):
+            X_train, X_test = self._extract(X, i_train, i_test)
+            y_train, y_test = self._extract(y, i_train, i_test)
+
+            estimator = clone(estimator)
+            estimator.fit(X_train, y_train)
+
+            scores.append(scorer(estimator, X_test, y_test))
+        return np.array(scores)
+            
+
+
+            
+                
 
 
 
@@ -192,7 +293,14 @@ def extract(array, train_indexes, test_indexes):
 '''
 
 if __name__ == '__main__':
-    pass
+    np.random.seed(334)
+    example = np.random.rand(102, 2)
+    ks = KennardStone()
+    kf = ks.KFold(n_splits = 5)
+    
+    for i_train, i_test in kf.split(example):
+        print(i_train, i_test)
+        
 
 
 
