@@ -3,6 +3,8 @@
 均等に分割するためのアルゴリズム．（詳しくは[参考文献](#参考文献)参照）<br>
 train_test_splitやKFold，cross_val_scoreを用意．
 
+![simulateion_gif](https://github.com/yu-9824/kennard_stone/blob/9ecc73fb968755a8fe28b06f20588a92df204ec6/example/simulate.gif "Simulateion")
+
 ## 使い方
 ### kennard_stoneの場合
 ```python
