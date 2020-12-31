@@ -1,6 +1,6 @@
 # Kennard Stone
 ## 概要
-均等に分割するためのアルゴリズム．（詳しくは[References](##References)参照）<br>
+均等に分割するためのアルゴリズム．（詳しくは[参考文献](#参考文献)参照）<br>
 train_test_splitやKFold，cross_val_scoreを用意．
 
 ## 使い方
@@ -24,7 +24,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, rando
 また，version: 0.0.3時点では```n_jobs```も未実施．
 
 
-## References
+## 参考文献
 ### 論文
 http://www.tandfonline.com/doi/abs/10.1080/00401706.1969.10490666
 ### サイト
