@@ -10,6 +10,7 @@ from kennard_stone import KennardStone
 ks = KennardStone()
 X_train, X_test, y_train, y_test = ks.train_test_split(X, y, test_size = 0.2)
 ```
+その他の使い方はexampleフォルダを参照．
 
 ### scikit-learnの場合（参考）
 ```python
@@ -20,7 +21,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, rando
 
 ## 注意点
 分割がデータセットに対して一通りに決まるので，```random_state```や```shuffle```という概念がない．<br>
-それらを引数に入れてしまうとerrorを生じうる．
+それらを引数に入れてしまうとerrorを生じうる．<br><br>
 また，version: 0.0.3時点では```n_jobs```も未実施．
 
 
