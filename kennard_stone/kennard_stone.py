@@ -130,7 +130,6 @@ class KennardStone:
                 indexes_splited.append(indexes[i:j])
                 i = j
             
-            indexes_train_test = []
             for n in range(self.n_splits):
                 indexes_train_temp = []
                 for m in range(self.n_splits):
@@ -138,14 +137,10 @@ class KennardStone:
                         indexes_test = indexes_splited[m]
                     else:
                         indexes_train_temp.extend(indexes_splited[m])
-                indexes_train_test.append([indexes_train_temp, indexes_test])
-            return indexes_train_test
+                yield [indexes_train_temp, indexes_test]    # ジェネレーターで返す
 
     def cross_val_score(self, estimator, X, y, scoring = None, cv = 5):
-        if scoring is None:
-            scoring = make_scorer(lambda y1, y2: np.sqrt(mean_squared_error(y1, y2)))
-
-        scorer = get_scorer(scoring)
+        scorer = self._check_scoring(scoring)
         
         scores = []
         kf = self.KFold(n_splits = cv)
@@ -158,8 +153,12 @@ class KennardStone:
 
             scores.append(scorer(estimator, X_test, y_test))
         return np.array(scores)
-            
 
+    def _check_scoring(self, scoring = None):
+        if scoring is None:
+            scoring = make_scorer(lambda y1, y2: np.sqrt(mean_squared_error(y1, y2)))
+
+        return get_scorer(scoring)
 
             
                 
