@@ -1,34 +1,101 @@
 # Kennard Stone
-## 概要
-均等に分割するためのアルゴリズム．（詳しくは[参考文献](#参考文献)参照）<br>
+## What is this.
+This is An algorithm for evenly partitioning. (See [References](#References) for details.<br>
 train_test_splitやKFold，cross_val_scoreを用意．
 
 ![simulateion_gif](https://github.com/yu-9824/kennard_stone/blob/9ecc73fb968755a8fe28b06f20588a92df204ec6/example/simulate.gif "Simulateion")
 
-## 使い方
-### kennard_stoneの場合
-```python
-from kennard_stone import KennardStone
-ks = KennardStone()
-X_train, X_test, y_train, y_test = ks.train_test_split(X, y, test_size = 0.2)
+# How to install
+```bash
+pip install kennard-stone
 ```
-その他の使い方はexampleフォルダを参照．
 
-### scikit-learnの場合（参考）
+## How to use
+You can use them like [scikit-learn](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection).
+
+See [example](https://github.com/yu-9824/kennard_stone/tree/main/example) for details.
+
+In the following, `X` denotes an arbitrary explanatory variable and `y` an arbitrary objective variable.
+And, `estimator` indicates an arbitrary prediction model that conforms to scikit-learn.
+
+### `train_test_split`
+#### kennard_stone
+```python
+from kennard_stone import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2)
+```
+
+#### scikit-learn
 ```python
 from sklearn.model_selection import train_test_split
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 334)
 ```
 
+### `KFold`
+#### kennard_stone
+```python
+from kennard_stone import KFold
 
-## 注意点
-分割がデータセットに対して一通りに決まるので，```random_state```や```shuffle```という概念がない．<br>
-それらを引数に入れてしまうとerrorを生じうる．<br><br>
-また，version: 0.0.3時点では```n_jobs```も未実施．
+kf = KFold(n_splits = 5)
+for i_train, i_test in kf.split(X, y):
+    X_train = X[i_train]
+    y_train = y[i_train]
+    X_test = X[i_test]
+    y_test = y[i_test]
+```
+
+#### scikit-learn
+```python
+from scikit-learn.model_selection import KFold
+
+kf = KFold(n_splits = 5, shuffle = True, random_state = 334)
+for i_train, i_test in kf.split(X, y):
+    X_train = X[i_train]
+    y_train = y[i_train]
+    X_test = X[i_test]
+    y_test = y[i_test]
+```
+
+### Others
+If you ever specify `cv` in scikit-learn, you can assign `KFold` objects to it and apply it to various functions.
+
+An example is [`cross_validate`](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html).
+
+#### kennard_stone
+```python
+from kennard_stone import KFold
+from sklearn.model_selection import cross_validate
+
+kf = KFold(n_splits = 5)
+print(cross_validate(estimator, X, y, cv = kf))
+```
+
+#### scikit-learn
+```python
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_validate
+
+kf = KFold(n_splits = 5, shuffle = True, random_state = 334)
+print(cross_validate(estimator, X, y, cv = kf))
+```
+OR
+```python
+from sklearn.model_selection import cross_validate
+
+print(cross_validate(estimator, X, y, cv = 5))
+```
 
 
-## 参考文献
-### 論文
-http://www.tandfonline.com/doi/abs/10.1080/00401706.1969.10490666
-### サイト
-https://datachemeng.com/trainingtestdivision/
+## Points to note
+There is no notion of `random_state` or `shuffle` because the partitioning is determined uniquely for the dataset.<br>
+If you include them in the argument, you will not get an error, but they have no effect, so be careful.<br><br>
+Also, `n_jobs` has not been implemented.
+
+
+## References
+### Papers
+* R. W. Kennard & L. A. Stone (1969) Computer Aided Design of Experiments, Technometrics, 11:1, 137-148, DOI: [10.1080/00401706.1969.10490666](https://doi.org/10.1080/00401706.1969.10490666)
+### Sites
+* [https://datachemeng.com/trainingtestdivision/](https://datachemeng.com/trainingtestdivision/)
