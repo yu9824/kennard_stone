@@ -11,13 +11,6 @@ from sklearn.utils.validation import _deprecate_positional_args
 from sklearn.utils import indexable, _safe_indexing
 from sklearn.preprocessing import StandardScaler
 
-
-__all__ = [
-    'KFold',
-    'train_test_split',
-    '_KennardStone'
-]
-
 class KFold(_BaseKFold):
     def __init__(self, n_splits = 5, **kwargs):
         super().__init__(n_splits=n_splits, shuffle=False, random_state=None)
