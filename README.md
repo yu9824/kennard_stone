@@ -1,6 +1,10 @@
 # Kennard Stone
-## What is this.
-This is An algorithm for evenly partitioning. (See [References](#References) for details.)
+![python_badge](https://img.shields.io/pypi/pyversions/kennard-stone)
+![license_badge](https://img.shields.io/pypi/l/kennard-stone)
+![PyPI_Downloads_badge](https://img.shields.io/pypi/dm/kennard-stone)
+
+## What is this?
+This is an algorithm for evenly partitioning data in a `scikit-learn`-like interface. (See [References](#References) for details of the algorithm.)
 
 ![simulateion_gif](https://github.com/yu-9824/kennard_stone/blob/main/example/simulate.gif?raw=true "Simulateion")
 
@@ -8,6 +12,7 @@ This is An algorithm for evenly partitioning. (See [References](#References) for
 ```bash
 pip install kennard-stone
 ```
+You need `numpy`, `pandas` and `scikit-learn`.
 
 ## How to use
 You can use them like [scikit-learn](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection).
@@ -17,7 +22,7 @@ See [example](https://github.com/yu-9824/kennard_stone/tree/main/example) for de
 In the following, `X` denotes an arbitrary explanatory variable and `y` an arbitrary objective variable.
 And, `estimator` indicates an arbitrary prediction model that conforms to scikit-learn.
 
-### `train_test_split`
+### train_test_split
 #### kennard_stone
 ```python
 from kennard_stone import train_test_split
@@ -32,7 +37,7 @@ from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 334)
 ```
 
-### `KFold`
+### KFold
 #### kennard_stone
 ```python
 from kennard_stone import KFold
@@ -47,7 +52,7 @@ for i_train, i_test in kf.split(X, y):
 
 #### scikit-learn
 ```python
-from scikit-learn.model_selection import KFold
+from sklearn.model_selection import KFold
 
 kf = KFold(n_splits = 5, shuffle = True, random_state = 334)
 for i_train, i_test in kf.split(X, y):
