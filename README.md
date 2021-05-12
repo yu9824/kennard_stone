@@ -2,6 +2,7 @@
 ![python_badge](https://img.shields.io/pypi/pyversions/kennard-stone)
 ![license_badge](https://img.shields.io/pypi/l/kennard-stone)
 ![PyPI_Downloads_badge](https://img.shields.io/pypi/dm/kennard-stone)
+![Downloads](https://pepy.tech/badge/kennard-stone)
 
 ## What is this?
 This is an algorithm for evenly partitioning data in a `scikit-learn`-like interface. (See [References](#References) for details of the algorithm.)
