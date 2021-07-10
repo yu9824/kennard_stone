@@ -68,6 +68,8 @@ def train_test_split(*arrays, test_size=None, train_size=None, **kwargs):
     return list(chain.from_iterable((_safe_indexing(a, train), _safe_indexing(a, test)) for a in arrays))
 
 
+# from kennard_stone import _KennardStoneでは呼び出せない．
+# したがって，呼び出したい場合は，import kennard_stone; _KennardStone = kennard_stone.kennard_stone._KennardStoneとする必要がある．
 class _KennardStone:
     # 引数には入れているが，基本的にFalseにすることはない．
     def __init__(self, scale = True, prior = 'test'):
