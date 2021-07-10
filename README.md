@@ -96,7 +96,6 @@ print(cross_validate(estimator, X, y, cv = 5))
 ## Points to note
 There is no notion of `random_state` or `shuffle` because the partitioning is determined uniquely for the dataset.<br>
 If you include them in the argument, you will not get an error, but they have no effect, so be careful.<br><br>
-Also, `n_jobs` has not been implemented.
 
 
 ## References
