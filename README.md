@@ -7,7 +7,7 @@
 ## What is this?
 This is an algorithm for evenly partitioning data in a `scikit-learn`-like interface. (See [References](#References) for details of the algorithm.)
 
-![simulateion_gif](https://github.com/yu-9824/kennard_stone/blob/main/example/simulate.gif?raw=true "Simulateion")
+![simulateion_gif](https://github.com/yu9824/kennard_stone/blob/main/example/simulate.gif?raw=true "Simulateion")
 
 ## How to install
 ```bash
@@ -18,7 +18,7 @@ You need `numpy`, `pandas` and `scikit-learn`.
 ## How to use
 You can use them like [scikit-learn](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection).
 
-See [example](https://github.com/yu-9824/kennard_stone/tree/main/example) for details.
+See [example](https://github.com/yu9824/kennard_stone/tree/main/example) for details.
 
 In the following, `X` denotes an arbitrary explanatory variable and `y` an arbitrary objective variable.
 And, `estimator` indicates an arbitrary prediction model that conforms to scikit-learn.
