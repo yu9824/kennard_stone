@@ -1,3 +1,7 @@
+'''
+Copyright © 2021 yu9824
+'''
+
 import pandas as pd
 import numpy as np
 from math import ceil
