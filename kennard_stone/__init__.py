@@ -1,6 +1,6 @@
 from .kennard_stone import *
 
-__version__      = '1.1.0'
+__version__      = '1.1.1dev'
 __license__      = 'MIT'
 __author__       = 'yu9824'
 __copyright__    = 'Copyright © 2021 yu9824'
