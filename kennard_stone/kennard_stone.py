@@ -2,9 +2,7 @@
 Copyright © 2021 yu9824
 '''
 
-import pandas as pd
 import numpy as np
-from math import ceil
 
 from itertools import chain
 from sklearn.model_selection._split import BaseShuffleSplit
@@ -14,10 +12,21 @@ from sklearn.utils.validation import _num_samples
 from sklearn.utils.validation import _deprecate_positional_args
 from sklearn.utils import indexable, _safe_indexing
 from sklearn.preprocessing import StandardScaler
+from sklearn.utils import check_array
 
 class KFold(_BaseKFold):
-    def __init__(self, n_splits = 5, **kwargs):
+    def __init__(self, n_splits = 5, alternate=False, **kwargs):
+        """K-Folds cross-validator using the Kennard-Stone algorithm.
+
+        Parameters
+        ----------
+        n_splits : int, optional
+            Number of folds. Must be at least 2., by default 5
+        alternate : bool, optional
+            How to divide; if true, take out each fold in turn., by default False
+        """
         super().__init__(n_splits=n_splits, shuffle=False, random_state=None)
+        self.alternate = alternate
         del self.shuffle
         del self.random_state
     
@@ -28,13 +37,19 @@ class KFold(_BaseKFold):
         indices = _ks._get_indexes(X)
 
         n_splits = self.n_splits
-        fold_sizes = np.full(n_splits, n_samples // n_splits, dtype = int)
-        fold_sizes[:n_samples % n_splits] += 1
-        current = 0
-        for fold_size in fold_sizes:
-            start, stop = current, current + fold_size
-            yield indices[start:stop]
-            current = stop
+        alternate = self.alternate
+        if alternate:
+            remainder_ = np.arange(n_samples, dtype=int) % n_splits
+            for iter in range(n_splits):
+                yield np.array(indices, dtype=int)[remainder_ == iter].tolist()
+        else:
+            fold_sizes = np.full(n_splits, n_samples // n_splits, dtype = int)
+            fold_sizes[:n_samples % n_splits] += 1
+            current = 0
+            for fold_size in fold_sizes:
+                start, stop = current, current + fold_size
+                yield indices[start:stop]
+                current = stop
 
 class KSSplit(BaseShuffleSplit):
     @_deprecate_positional_args
@@ -55,6 +70,26 @@ class KSSplit(BaseShuffleSplit):
             yield ind_train, ind_test
 
 def train_test_split(*arrays, test_size=None, train_size=None, **kwargs):
+    """Split arrays or matrices into train and test subsets using the Kennard-Stone algorithm.
+
+    Parameters
+    ----------
+    *arrays: sequence of indexables with same length / shape[0]
+        Allowed inputs are lists, numpy arrays, scipy-sparse matrices or pandas dataframes.
+    test_size : float or int, optional
+        If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split. If int, represents the absolute number of test samples. If None, the value is set to the complement of the train size. If train_size is also None, it will be set to 0.25., by default None
+    train_size : float or int, optional
+        If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the train split. If int, represents the absolute number of train samples. If None, the value is automatically set to the complement of the test size., by default None
+
+    Returns
+    -------
+    splitting : list, length=2 * len(arrays)
+        List containing train-test split of inputs
+
+    Raises
+    ------
+    ValueError
+    """
     n_arrays = len(arrays)
     if n_arrays == 0:
         raise ValueError("At least one array required as input")
@@ -82,7 +117,7 @@ class _KennardStone:
     
     def _get_indexes(self, X):
         # np.ndarray化
-        X = np.array(X)
+        X = check_array(X)
 
         if self.scale:
             scaler = StandardScaler()
@@ -140,6 +175,7 @@ class _KennardStone:
 
 if __name__ == '__main__':
     from pdb import set_trace
+    import pandas as pd
     from sklearn.model_selection import cross_validate
     from sklearn.datasets import load_boston
     from sklearn.ensemble import RandomForestRegressor
@@ -156,6 +192,3 @@ if __name__ == '__main__':
 
     kf = KFold(n_splits=5)
     print(cross_validate(rf, X, y, scoring = 'neg_mean_squared_error', cv = kf))
-
-
-
