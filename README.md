@@ -96,6 +96,8 @@ print(cross_validate(estimator, X, y, cv = 5))
 There is no notion of `random_state` or `shuffle` because the partitioning is determined uniquely for the dataset.
 If these arguments are included, they do not cause an error. They simply have no effect on the result. Please be careful.
 
+If you want to run the notebook in example directory, you will need to additionally download matplotlib, seaborn, tqdm, and jupyter other than the packages in requirements.txt.
+
 ## LICENSE
 
 MIT Licence
