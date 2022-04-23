@@ -107,6 +107,7 @@ if 'py2app' in sys.argv:
         data_files = DATA_FILES,
         options = {'py2app': OPTIONS},
         setup_requires = ['py2app'],
+        extras_require = {},
         url = 'https://github.com/{0}/{1}'.format(ID, APP_NAME),
     )
 
