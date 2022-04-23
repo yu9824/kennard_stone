@@ -6,7 +6,7 @@ import pandas as pd
 
 diabetes = load_diabetes()
 X = pd.DataFrame(diabetes.data, columns=diabetes.feature_names)
-y = pd.Series(diabetes.target, name = 'PRICE')
+y = pd.Series(diabetes.target)
 
 X_train, y_train, X_test, y_test = train_test_split(X, y, test_size=0.2)
 print(X_train, y_train, X_test, y_test)
