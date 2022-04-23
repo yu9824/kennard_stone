@@ -1,4 +1,4 @@
-from .kennard_stone import *
+from .kennard_stone import KFold, train_test_split
 
 __version__      = '1.1.1dev'
 __license__      = 'MIT'
