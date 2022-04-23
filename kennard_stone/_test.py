@@ -1,12 +1,12 @@
 from kennard_stone import train_test_split, KFold
-from sklearn.datasets import load_boston
+from sklearn.datasets import load_diabetes
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import cross_validate
 import pandas as pd
 
-boston = load_boston()
-X = pd.DataFrame(boston.data, columns=boston.feature_names)
-y = pd.Series(boston.target, name = 'PRICE')
+diabetes = load_diabetes()
+X = pd.DataFrame(diabetes.data, columns=diabetes.feature_names)
+y = pd.Series(diabetes.target, name = 'PRICE')
 
 X_train, y_train, X_test, y_test = train_test_split(X, y, test_size=0.2)
 print(X_train, y_train, X_test, y_test)
