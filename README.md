@@ -1,7 +1,9 @@
 # Kennard Stone
-![python_badge](https://img.shields.io/pypi/pyversions/kennard-stone)
-![license_badge](https://img.shields.io/pypi/l/kennard-stone)
-![Downloads](https://pepy.tech/badge/kennard-stone)
+[![python_badge](https://img.shields.io/pypi/pyversions/kennard-stone)](https://pypi.org/project/kennard-stone/)
+[![license_badge](https://img.shields.io/pypi/l/kennard-stone)](https://pypi.org/project/kennard-stone/)
+[![Downloads](https://pepy.tech/badge/kennard-stone)](https://pepy.tech/project/kennard-stone)
+
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/kennard-stone/badges/installer/conda.svg)](https://conda.anaconda.org/conda-forge)
 
 ## What is this?
 This is an algorithm for evenly partitioning data in a `scikit-learn`-like interface. (See [References](#References) for details of the algorithm.)
@@ -9,9 +11,19 @@ This is an algorithm for evenly partitioning data in a `scikit-learn`-like inter
 ![simulateion_gif](https://github.com/yu9824/kennard_stone/blob/main/example/simulate.gif?raw=true "Simulateion")
 
 ## How to install
+
+### PyPI
+
 ```bash
 pip install kennard-stone
 ```
+
+### Anaconda
+
+```bash
+conda install -c conda-forge kennard-stone
+```
+
 You need `numpy`, `pandas` and `scikit-learn`.
 
 ## How to use
