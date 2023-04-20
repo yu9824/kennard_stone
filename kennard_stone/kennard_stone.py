@@ -136,10 +136,15 @@ def train_test_split(*arrays, test_size=None, train_size=None, **kwargs):
 # したがって，呼び出したい場合は，import kennard_stone
 # _KennardStone = kennard_stone.kennard_stone._KennardStoneとする必要がある．
 class _KennardStone:
-    # 引数には入れているが，基本的にFalseにすることはない．
-    def __init__(self, scale=True, prior="test"):
+    def __init__(self, scale=True):
+        """The root program of the Kennard-Stone algorithm.
+
+        Parameters
+        ----------
+        scale : bool, optional
+            scaling X or not, by default True
+        """
         self.scale = scale
-        self.prior = prior
 
     def _get_indexes(self, X):
         # check input array
@@ -153,7 +158,7 @@ class _KennardStone:
         self._original_X = X.copy()
 
         # 全ての組成に対してそれぞれの平均との距離の二乗を配列として得る． (サンプル数の分だけ存在)
-        distance_to_ave = np.sum((X - X.mean(axis=0)) ** 2, axis=1)
+        distance_to_ave = np.sum(np.square(X - X.mean(axis=0)), axis=1)
 
         # 最大値を取るサンプル (平均からの距離が一番遠い) のindex_numberを保存
         i_farthest = np.argmax(distance_to_ave)
@@ -171,12 +176,7 @@ class _KennardStone:
         # 遠い順のindexのリスト．i.e. 最初がtrain向き，最後がtest向き
         indexes = self._sort(X, i_selected, i_remaining)
 
-        if self.prior == "test":
-            return list(reversed(indexes))
-        elif self.prior == "train":
-            return indexes
-        else:
-            raise NotImplementedError
+        return list(reversed(indexes))
 
     def _sort(self, X, i_selected, i_remaining):
         # 選ばれたサンプル (x由来)
