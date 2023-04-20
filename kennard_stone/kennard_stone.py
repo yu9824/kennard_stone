@@ -9,7 +9,6 @@ from sklearn.model_selection._split import BaseShuffleSplit
 from sklearn.model_selection._split import _BaseKFold
 from sklearn.model_selection._split import _validate_shuffle_split
 from sklearn.utils.validation import _num_samples
-from sklearn.utils.validation import _deprecate_positional_args
 from sklearn.utils import indexable, _safe_indexing
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import check_array
@@ -54,7 +53,6 @@ class KFold(_BaseKFold):
 
 
 class KSSplit(BaseShuffleSplit):
-    @_deprecate_positional_args
     def __init__(self, n_splits=10, *, test_size=None, train_size=None):
         super().__init__(
             n_splits=n_splits, test_size=test_size, train_size=train_size
@@ -197,16 +195,15 @@ class _KennardStone:
 
 
 if __name__ == "__main__":
-    from pdb import set_trace
     import pandas as pd
     from sklearn.model_selection import cross_validate
-    from sklearn.datasets import load_boston
+    from sklearn.datasets import load_diabetes
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.metrics import mean_squared_error as mse
 
-    boston = load_boston()
-    X = pd.DataFrame(boston["data"], columns=boston["feature_names"])
-    y = pd.Series(boston["target"], name="PRICE")
+    data = load_diabetes(as_frame=True)
+    X: pd.DataFrame = data.data
+    y: pd.Series = data.target
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
     rf = RandomForestRegressor(n_jobs=-1, random_state=334)
