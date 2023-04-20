@@ -23,7 +23,8 @@ class KFold(_BaseKFold):
         n_splits : int, optional
             Number of folds. Must be at least 2., by default 5
         alternate : bool, optional
-            How to divide; if true, take out each fold in turn., by default False
+            How to divide; if true, take out each fold in turn.
+            , by default False
         """
         super().__init__(n_splits=n_splits, shuffle=False, random_state=None)
         self.alternate = alternate
@@ -79,16 +80,25 @@ class KSSplit(BaseShuffleSplit):
 
 
 def train_test_split(*arrays, test_size=None, train_size=None, **kwargs):
-    """Split arrays or matrices into train and test subsets using the Kennard-Stone algorithm.
+    """Split arrays or matrices into train and test subsets using the
+    Kennard-Stone algorithm.
 
     Parameters
     ----------
     *arrays: sequence of indexables with same length / shape[0]
-        Allowed inputs are lists, numpy arrays, scipy-sparse matrices or pandas dataframes.
+        Allowed inputs are lists, numpy arrays, scipy-sparse
+        matrices or pandas dataframes.
     test_size : float or int, optional
-        If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split. If int, represents the absolute number of test samples. If None, the value is set to the complement of the train size. If train_size is also None, it will be set to 0.25., by default None
+        If float, should be between 0.0 and 1.0 and represent the proportion
+        of the dataset to include in the test split. If int, represents the
+        absolute number of test samples. If None, the value is set to the
+        complement of the train size. If train_size is also None, it will be
+        set to 0.25., by default None
     train_size : float or int, optional
-        If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the train split. If int, represents the absolute number of train samples. If None, the value is automatically set to the complement of the test size., by default None
+        If float, should be between 0.0 and 1.0 and represent the proportion
+        of the dataset to include in the train split. If int, represents the
+        absolute number of train samples. If None, the value is automatically
+        set to the complement of the test size., by default None
 
     Returns
     -------
@@ -123,7 +133,8 @@ def train_test_split(*arrays, test_size=None, train_size=None, **kwargs):
 
 
 # from kennard_stone import _KennardStoneでは呼び出せない．
-# したがって，呼び出したい場合は，import kennard_stone; _KennardStone = kennard_stone.kennard_stone._KennardStoneとする必要がある．
+# したがって，呼び出したい場合は，import kennard_stone
+# _KennardStone = kennard_stone.kennard_stone._KennardStoneとする必要がある．
 class _KennardStone:
     # 引数には入れているが，基本的にFalseにすることはない．
     def __init__(self, scale=True, prior="test"):
@@ -131,14 +142,14 @@ class _KennardStone:
         self.prior = prior
 
     def _get_indexes(self, X):
-        # np.ndarray化
-        X = check_array(X)
+        # check input array
+        X: np.ndarray = check_array(X, ensure_2d=True)
 
         if self.scale:
             scaler = StandardScaler()
             X = scaler.fit_transform(X)
 
-        # もとのXを取っておく
+        # Save the original X.
         self._original_X = X.copy()
 
         # 全ての組成に対してそれぞれの平均との距離の二乗を配列として得る． (サンプル数の分だけ存在)
@@ -171,7 +182,8 @@ class _KennardStone:
         # 選ばれたサンプル (x由来)
         samples_selected = self._original_X[i_selected]
 
-        # まだ選択されていない各サンプルにおいて、これまで選択されたすべてのサンプルとの間でユークリッド距離を計算し，その最小の値を「代表長さ」とする．
+        # まだ選択されていない各サンプルにおいて、これまで選択されたすべてのサンプルとの間で
+        # ユークリッド距離を計算し，その最小の値を「代表長さ」とする．
         min_distance_to_samples_selected = np.min(
             np.sum(
                 (np.expand_dims(samples_selected, 1) - np.expand_dims(X, 0))
