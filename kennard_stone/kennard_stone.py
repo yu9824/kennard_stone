@@ -2,6 +2,8 @@
 Copyright © 2021 yu9824
 """
 
+from typing import List, Union, Optional
+
 import numpy as np
 
 from itertools import chain
@@ -14,56 +16,50 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.utils import check_array
 
 
+# TODO: 他のパラメータはいらないよ！とdocstringに書く。
+# TODO: unittest?
+# TODO: sphinxによるドキュメント？
+# TODO: 対応バージョンの変更？
+# [ ]: 変更点、KFoldアルゴリズムの改良。_KennardStoneクラスの改良。alternateをとらなくした、priorをとらなくした。pandasをrequirementsから外した。
 class KFold(_BaseKFold):
-    def __init__(self, n_splits=5, alternate=False, **kwargs):
+    def __init__(self, n_splits: int = 5, **kwargs):
         """K-Folds cross-validator using the Kennard-Stone algorithm.
 
         Parameters
         ----------
         n_splits : int, optional
             Number of folds. Must be at least 2., by default 5
-        alternate : bool, optional
-            How to divide; if true, take out each fold in turn.
-            , by default False
         """
         super().__init__(n_splits=n_splits, shuffle=False, random_state=None)
-        self.alternate = alternate
         del self.shuffle
         del self.random_state
 
     def _iter_test_indices(self, X=None, y=None, groups=None):
-        n_samples = _num_samples(X)
+        ks = _KennardStone(n_groups=self.get_n_splits())
+        indexes = ks.get_indexes(X)
 
-        _ks = _KennardStone()
-        indices = _ks._get_indexes(X)
-
-        n_splits = self.n_splits
-        alternate = self.alternate
-        if alternate:
-            remainder_ = np.arange(n_samples, dtype=int) % n_splits
-            for iter in range(n_splits):
-                yield np.array(indices, dtype=int)[remainder_ == iter].tolist()
-        else:
-            fold_sizes = np.full(n_splits, n_samples // n_splits, dtype=int)
-            fold_sizes[: n_samples % n_splits] += 1
-            current = 0
-            for fold_size in fold_sizes:
-                start, stop = current, current + fold_size
-                yield indices[start:stop]
-                current = stop
+        for index in indexes:
+            yield index
 
 
 class KSSplit(BaseShuffleSplit):
-    def __init__(self, n_splits=10, *, test_size=None, train_size=None):
+    def __init__(
+        self,
+        n_splits: int = 1,
+        *,
+        test_size: Optional[Union[float, int]] = None,
+        train_size: Optional[Union[float, int]] = None
+    ):
         super().__init__(
             n_splits=n_splits, test_size=test_size, train_size=train_size
         )
+        assert self.get_n_splits() == 1, "n_splits must be 1"
         self._default_test_size = 0.1
 
     # overwrap abstractmethod
     def _iter_indices(self, X, y=None, groups=None):
-        _ks = _KennardStone()
-        inds = _ks._get_indexes(X)
+        ks = _KennardStone(n_groups=1)
+        indexes = ks.get_indexes(X)[0]
 
         n_samples = _num_samples(X)
         n_train, n_test = _validate_shuffle_split(
@@ -73,9 +69,9 @@ class KSSplit(BaseShuffleSplit):
             default_test_size=self._default_test_size,
         )
 
-        for _ in range(self.n_splits):
-            ind_test = inds[:n_test]
-            ind_train = inds[n_test : (n_test + n_train)]
+        for _ in range(self.get_n_splits()):
+            ind_test = indexes[:n_test]
+            ind_train = indexes[n_test : (n_test + n_train)]
             yield ind_train, ind_test
 
 
@@ -132,21 +128,21 @@ def train_test_split(*arrays, test_size=None, train_size=None, **kwargs):
     )
 
 
-# from kennard_stone import _KennardStoneでは呼び出せない．
-# したがって，呼び出したい場合は，import kennard_stone
-# _KennardStone = kennard_stone.kennard_stone._KennardStoneとする必要がある．
 class _KennardStone:
-    def __init__(self, scale=True):
+    def __init__(self, n_groups: int = 1, scale: bool = True) -> None:
         """The root program of the Kennard-Stone algorithm.
 
         Parameters
         ----------
+        n_groups : int, optional
+            how many groups to divide, by default 1
         scale : bool, optional
             scaling X or not, by default True
         """
+        self.n_groups = n_groups
         self.scale = scale
 
-    def _get_indexes(self, X):
+    def get_indexes(self, X) -> List[List[int]]:
         # check input array
         X: np.ndarray = check_array(X, ensure_2d=True)
 
@@ -161,50 +157,82 @@ class _KennardStone:
         distance_to_ave = np.sum(np.square(X - X.mean(axis=0)), axis=1)
 
         # 最大値を取るサンプル (平均からの距離が一番遠い) のindex_numberを保存
-        i_farthest = np.argmax(distance_to_ave)
+        idx_farthest = np.argsort(distance_to_ave)[::-1][: self.n_groups]
 
         # 抜き出した (train用) サンプルのindex_numberを保存しとくリスト
-        i_selected = [i_farthest]
+        lst_idx_selected: List[List[int]] = [[_idx] for _idx in idx_farthest]
 
         # まだ抜き出しておらず，残っているサンプル (test用) サンプルのindex_numberを保存しておくリスト
-        i_remaining = np.arange(len(X))
+        idx_remaining = np.arange(len(X))
 
         # 抜き出した (train用) サンプルに選ばれたサンプルをtrain用のものから削除
-        X = np.delete(X, i_selected, axis=0)
-        i_remaining = np.delete(i_remaining, i_selected, axis=0)
+        X = np.delete(X, idx_farthest, axis=0)
+        idx_remaining = np.delete(idx_remaining, idx_farthest, axis=0)
 
-        # 遠い順のindexのリスト．i.e. 最初がtrain向き，最後がtest向き
-        indexes = self._sort(X, i_selected, i_remaining)
+        # 近い順のindexのリスト．i.e. 最初がtest向き，最後がtrain向き
+        indexes = self._sort(
+            X=X, lst_idx_selected=lst_idx_selected, idx_remaining=idx_remaining
+        )
+        assert (
+            len(sum(indexes, start=[]))
+            == len(set(sum(indexes, start=[])))
+            == len(self._original_X)
+        )
 
-        return list(reversed(indexes))
+        return indexes
 
-    def _sort(self, X, i_selected, i_remaining):
-        # 選ばれたサンプル (x由来)
-        samples_selected = self._original_X[i_selected]
+    def _sort(
+        self,
+        X,
+        lst_idx_selected: List[List[int]],
+        idx_remaining: Union[List[int], np.ndarray],
+    ) -> List[List[int]]:
+        samples_selected: np.ndarray = self._original_X[
+            sum(lst_idx_selected, start=[])
+        ]
 
         # まだ選択されていない各サンプルにおいて、これまで選択されたすべてのサンプルとの間で
         # ユークリッド距離を計算し，その最小の値を「代表長さ」とする．
-        min_distance_to_samples_selected = np.min(
-            np.sum(
-                (np.expand_dims(samples_selected, 1) - np.expand_dims(X, 0))
-                ** 2,
-                axis=2,
+
+        min_distance_to_samples_selected = np.sum(
+            np.square(
+                np.expand_dims(samples_selected, 1) - np.expand_dims(X, 0)
             ),
-            axis=0,
+            axis=2,
         )
 
-        # 最大値を取るサンプル　(距離が一番遠い) のindex_numberを保存
-        i_farthest = np.argmax(min_distance_to_samples_selected)
+        _idxes_delete: List[int] = []
+        n_selected = len(lst_idx_selected[0])
+        for k in range(len(lst_idx_selected)):
+            if 0 < len(idx_remaining) - k:
+                _lst_sorted_args = np.argsort(
+                    np.min(
+                        min_distance_to_samples_selected[
+                            n_selected * k : n_selected * (k + 1)
+                        ],
+                        axis=0,
+                    ),
+                )
+                j = len(idx_remaining) - 1
+                while _lst_sorted_args[j] in set(_idxes_delete):
+                    j -= 1
+                else:
+                    # 最大値を取るサンプル (代表長さが最も大きい) のindex_numberを保存
+                    idx_selected = _lst_sorted_args[j]
 
-        # 選んだとして記録する
-        i_selected.append(i_remaining[i_farthest])
-        X = np.delete(X, i_farthest, axis=0)
-        i_remaining = np.delete(i_remaining, i_farthest, 0)
+                lst_idx_selected[k].append(idx_remaining[idx_selected])
+                _idxes_delete.append(idx_selected)
+            else:
+                break
 
-        if len(i_remaining):  # まだ残っているなら再帰
-            return self._sort(X, i_selected, i_remaining)
-        else:  # もうないなら終える
-            return i_selected
+        # delete
+        X = np.delete(X, _idxes_delete, axis=0)
+        idx_remaining = np.delete(idx_remaining, _idxes_delete, axis=0)
+
+        if len(idx_remaining):  # まだ残っているなら再帰
+            return self._sort(X, lst_idx_selected, idx_remaining)
+        else:  # もうないなら遠い順から近い順 (test側) に並べ替えて終える
+            return [_idx_selected[::-1] for _idx_selected in lst_idx_selected]
 
 
 if __name__ == "__main__":
