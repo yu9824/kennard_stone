@@ -13,5 +13,18 @@ print(X_train, y_train, X_test, y_test)
 
 estimator = RandomForestRegressor(random_state=334, n_jobs=-1)
 
-for kf in (KFold(n_splits=5, alternate=True), KFold(n_splits=5, alternate=False)):
-    print(cross_validate(estimator, X, y, scoring='neg_mean_squared_error', n_jobs = -1, cv = kf, return_train_score=True))
+for kf in (
+    KFold(n_splits=5, alternate=True),
+    KFold(n_splits=5, alternate=False),
+):
+    print(
+        cross_validate(
+            estimator,
+            X,
+            y,
+            scoring="neg_mean_squared_error",
+            n_jobs=-1,
+            cv=kf,
+            return_train_score=True,
+        )
+    )
