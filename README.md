@@ -9,6 +9,7 @@
 [![Anaconda-license badge](https://anaconda.org/conda-forge/kennard-stone/badges/license.svg)](https://anaconda.org/conda-forge/kennard-stone)
 
 ## What is this?
+
 This is an algorithm for evenly partitioning data in a `scikit-learn`-like interface. (See [References](#References) for details of the algorithm.)
 
 ![simulateion_gif](https://github.com/yu9824/kennard_stone/blob/main/example/simulate.gif?raw=true "Simulateion")
@@ -21,15 +22,20 @@ This is an algorithm for evenly partitioning data in a `scikit-learn`-like inter
 pip install kennard-stone
 ```
 
+The project site is [here](https://pypi.org/project/kennard-stone/).
+
 ### Anaconda
 
 ```bash
 conda install -c conda-forge kennard-stone
 ```
 
-You need `numpy`, `pandas` and `scikit-learn`.
+The project site is [here](https://anaconda.org/conda-forge/kennard-stone).
+
+You need `numpy` and `scikit-learn` to run.
 
 ## How to use
+
 You can use them like [scikit-learn](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection).
 
 See [example](https://github.com/yu9824/kennard_stone/tree/main/example) for details.
@@ -38,7 +44,9 @@ In the following, `X` denotes an arbitrary explanatory variable and `y` an arbit
 And, `estimator` indicates an arbitrary prediction model that conforms to scikit-learn.
 
 ### train_test_split
+
 #### kennard_stone
+
 ```python
 from kennard_stone import train_test_split
 
@@ -46,6 +54,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2)
 ```
 
 #### scikit-learn
+
 ```python
 from sklearn.model_selection import train_test_split
 
@@ -53,7 +62,9 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, rando
 ```
 
 ### KFold
+
 #### kennard_stone
+
 ```python
 from kennard_stone import KFold
 
@@ -66,6 +77,7 @@ for i_train, i_test in kf.split(X, y):
 ```
 
 #### scikit-learn
+
 ```python
 from sklearn.model_selection import KFold
 
@@ -77,12 +89,14 @@ for i_train, i_test in kf.split(X, y):
     y_test = y[i_test]
 ```
 
-### Others
+### Other usages
+
 If you ever specify `cv` in scikit-learn, you can assign `KFold` objects to it and apply it to various functions.
 
 An example is [`cross_validate`](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html).
 
 #### kennard_stone
+
 ```python
 from kennard_stone import KFold
 from sklearn.model_selection import cross_validate
@@ -92,6 +106,7 @@ print(cross_validate(estimator, X, y, cv = kf))
 ```
 
 #### scikit-learn
+
 ```python
 from sklearn.model_selection import KFold
 from sklearn.model_selection import cross_validate
@@ -107,11 +122,12 @@ print(cross_validate(estimator, X, y, cv = 5))
 ```
 
 
-## Points to note
+## Notes
+
 There is no notion of `random_state` or `shuffle` because the partitioning is determined uniquely for the dataset.
 If these arguments are included, they do not cause an error. They simply have no effect on the result. Please be careful.
 
-If you want to run the notebook in example directory, you will need to additionally download matplotlib, seaborn, tqdm, and jupyter other than the packages in requirements.txt.
+If you want to run the notebook in example directory, you will need to additionally download `pandas`, `matplotlib`, `seaborn`, `tqdm`, and `jupyter` other than the packages in requirements.txt.
 
 ## LICENSE
 
@@ -122,6 +138,8 @@ Copyright (c) 2021 yu9824
 
 ## References
 ### Papers
+
 * R. W. Kennard & L. A. Stone (1969) Computer Aided Design of Experiments, Technometrics, 11:1, 137-148, DOI: [10.1080/00401706.1969.10490666](https://doi.org/10.1080/00401706.1969.10490666)
 ### Sites
-* [https://datachemeng.com/trainingtestdivision/](https://datachemeng.com/trainingtestdivision/)
+
+* [https://datachemeng.com/trainingtestdivision/](https://datachemeng.com/trainingtestdivision/) (Japanese site)
