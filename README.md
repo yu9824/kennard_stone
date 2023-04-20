@@ -1,9 +1,12 @@
 # Kennard Stone
 [![python_badge](https://img.shields.io/pypi/pyversions/kennard-stone)](https://pypi.org/project/kennard-stone/)
 [![license_badge](https://img.shields.io/pypi/l/kennard-stone)](https://pypi.org/project/kennard-stone/)
+[![PyPI version](https://badge.fury.io/py/kennard-stone.svg)](https://pypi.org/project/kennard-stone/)
 [![Downloads](https://pepy.tech/badge/kennard-stone)](https://pepy.tech/project/kennard-stone)
 
-[![Anaconda-Server Badge](https://anaconda.org/conda-forge/kennard-stone/badges/installer/conda.svg)](https://conda.anaconda.org/conda-forge)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/kennard-stone/badges/version.svg)](https://anaconda.org/conda-forge/kennard-stone)
+[![Anaconda-platform badge](https://anaconda.org/conda-forge/kennard-stone/badges/platforms.svg)](https://anaconda.org/conda-forge/kennard-stone)
+[![Anaconda-license badge](https://anaconda.org/conda-forge/kennard-stone/badges/license.svg)](https://anaconda.org/conda-forge/kennard-stone)
 
 ## What is this?
 This is an algorithm for evenly partitioning data in a `scikit-learn`-like interface. (See [References](#References) for details of the algorithm.)
