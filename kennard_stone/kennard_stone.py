@@ -59,6 +59,7 @@ class KSSplit(BaseShuffleSplit):
         )
         self._default_test_size = 0.1
 
+    # overwrap abstractmethod
     def _iter_indices(self, X, y=None, groups=None):
         _ks = _KennardStone()
         inds = _ks._get_indexes(X)
