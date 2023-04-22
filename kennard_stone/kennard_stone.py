@@ -3,6 +3,7 @@ Copyright © 2021 yu9824
 """
 
 from typing import List, Union, Optional
+import warnings
 
 import numpy as np
 
@@ -16,11 +17,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.utils import check_array
 
 
-# TODO: 他のパラメータはいらないよ！とdocstringに書く。
 # TODO: unittest?
-# TODO: sphinxによるドキュメント？
-# TODO: 対応バージョンの変更？
-# [ ]: 変更点、KFoldアルゴリズムの改良。_KennardStoneクラスの改良。alternateをとらなくした、priorをとらなくした。pandasをrequirementsから外した。
+# TODO: sphinx documentation？
+
 class KFold(_BaseKFold):
     def __init__(self, n_splits: int = 5, **kwargs):
         """K-Folds cross-validator using the Kennard-Stone algorithm.
@@ -31,7 +30,21 @@ class KFold(_BaseKFold):
             Number of folds. Must be at least 2., by default 5
         """
         super().__init__(n_splits=n_splits, shuffle=False, random_state=None)
+
+        if "shuffle" in kwargs:
+            warnings.warn(
+                "`shuffle` is unnecessary because it is always shuffled"
+                " in this algorithm.",
+                UserWarning,
+            )
         del self.shuffle
+
+        if "random_state" in kwargs:
+            warnings.warn(
+                "`random_state` is unnecessary since it is uniquely determined"
+                " in this algorithm.",
+                UserWarning,
+            )
         del self.random_state
 
     def _iter_test_indices(self, X=None, y=None, groups=None):
@@ -105,6 +118,13 @@ def train_test_split(*arrays, test_size=None, train_size=None, **kwargs):
     ------
     ValueError
     """
+    if "random_state" in kwargs:
+        warnings.warn(
+            "`random_state` is unnecessary since it is uniquely determined"
+            " in this algorithm.",
+            UserWarning,
+        )
+
     n_arrays = len(arrays)
     if n_arrays == 0:
         raise ValueError("At least one array required as input")
