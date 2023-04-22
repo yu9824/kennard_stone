@@ -50,7 +50,7 @@ And, `estimator` indicates an arbitrary prediction model that conforms to scikit
 ```python
 from kennard_stone import train_test_split
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 ```
 
 #### scikit-learn
@@ -58,7 +58,9 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2)
 ```python
 from sklearn.model_selection import train_test_split
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 334)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=334
+)
 ```
 
 ### KFold
@@ -68,7 +70,8 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, rando
 ```python
 from kennard_stone import KFold
 
-kf = KFold(n_splits = 5)
+# Always shuffled and uniquely determined for a data set.
+kf = KFold(n_splits=5)
 for i_train, i_test in kf.split(X, y):
     X_train = X[i_train]
     y_train = y[i_train]
@@ -81,7 +84,7 @@ for i_train, i_test in kf.split(X, y):
 ```python
 from sklearn.model_selection import KFold
 
-kf = KFold(n_splits = 5, shuffle = True, random_state = 334)
+kf = KFold(n_splits=5, shuffle=True, random_state=334)
 for i_train, i_test in kf.split(X, y):
     X_train = X[i_train]
     y_train = y[i_train]
@@ -140,6 +143,16 @@ Copyright (c) 2021 yu9824
 ### Papers
 
 * R. W. Kennard & L. A. Stone (1969) Computer Aided Design of Experiments, Technometrics, 11:1, 137-148, DOI: [10.1080/00401706.1969.10490666](https://doi.org/10.1080/00401706.1969.10490666)
+
 ### Sites
 
 * [https://datachemeng.com/trainingtestdivision/](https://datachemeng.com/trainingtestdivision/) (Japanese site)
+
+
+## Histories
+
+### v2.0.0
+
+- Define Extended Kennard-Stone algorithm (multi-class) i.e. Improve KFold algorithm.
+- Delete `alternate` argument in `KFold`.
+- Delete requirements of `pandas`.
