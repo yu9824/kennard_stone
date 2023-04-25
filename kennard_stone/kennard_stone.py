@@ -3,11 +3,11 @@ Copyright © 2021 yu9824
 """
 
 from typing import List, Union, Optional
+from itertools import chain
 import warnings
 
 import numpy as np
 
-from itertools import chain
 from sklearn.model_selection._split import BaseShuffleSplit
 from sklearn.model_selection._split import _BaseKFold
 from sklearn.model_selection._split import _validate_shuffle_split
@@ -194,8 +194,8 @@ class _KennardStone:
             X=X, lst_idx_selected=lst_idx_selected, idx_remaining=idx_remaining
         )
         assert (
-            len(sum(indexes, start=[]))
-            == len(set(sum(indexes, start=[])))
+            len(list(chain.from_iterable(indexes)))
+            == len(set(chain.from_iterable(indexes)))
             == len(self._original_X)
         )
 
@@ -208,7 +208,7 @@ class _KennardStone:
         idx_remaining: Union[List[int], np.ndarray],
     ) -> List[List[int]]:
         samples_selected: np.ndarray = self._original_X[
-            sum(lst_idx_selected, start=[])
+            list(chain.from_iterable(lst_idx_selected))
         ]
 
         # まだ選択されていない各サンプルにおいて、これまで選択されたすべてのサンプルとの間で
