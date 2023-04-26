@@ -104,8 +104,8 @@ An example is [`cross_validate`](https://scikit-learn.org/stable/modules/generat
 from kennard_stone import KFold
 from sklearn.model_selection import cross_validate
 
-kf = KFold(n_splits = 5)
-print(cross_validate(estimator, X, y, cv = kf))
+kf = KFold(n_splits=5)
+print(cross_validate(estimator, X, y, cv=kf))
 ```
 
 #### scikit-learn
@@ -114,14 +114,14 @@ print(cross_validate(estimator, X, y, cv = kf))
 from sklearn.model_selection import KFold
 from sklearn.model_selection import cross_validate
 
-kf = KFold(n_splits = 5, shuffle = True, random_state = 334)
-print(cross_validate(estimator, X, y, cv = kf))
+kf = KFold(n_splits=5, shuffle=True, random_state=334)
+print(cross_validate(estimator, X, y, cv=kf))
 ```
 OR
 ```python
 from sklearn.model_selection import cross_validate
 
-print(cross_validate(estimator, X, y, cv = 5))
+print(cross_validate(estimator, X, y, cv=5))
 ```
 
 
@@ -156,3 +156,7 @@ Copyright (c) 2021 yu9824
 - Define Extended Kennard-Stone algorithm (multi-class) i.e. Improve KFold algorithm.
 - Delete `alternate` argument in `KFold`.
 - Delete requirements of `pandas`.
+
+### v2.0.1
+
+- Fix bug with Python3.7.
