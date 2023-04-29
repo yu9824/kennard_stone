@@ -115,6 +115,9 @@ def train_test_split(
     """Split arrays or matrices into train and test subsets using the
     Kennard-Stone algorithm.
 
+    Data partitioning by the Kennard-Stone algorithm is performed based on the
+     first element to be input.
+
     Parameters
     ----------
     *arrays: sequence of indexables with same length / shape[0]
@@ -228,7 +231,7 @@ class _KennardStone:
             X=X, lst_idx_selected=lst_idx_selected, idx_remaining=idx_remaining
         )
         assert (
-            len(list(chain.from_iterable(indexes)))
+            len(tuple(chain.from_iterable(indexes)))
             == len(set(chain.from_iterable(indexes)))
             == len(self._original_X)
         )
