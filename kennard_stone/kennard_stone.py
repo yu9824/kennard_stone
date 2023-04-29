@@ -21,8 +21,8 @@ from sklearn.feature_selection import VarianceThreshold
 from sklearn.utils import check_array
 
 
-# TODO: unittest?
 # TODO: sphinx documentation？
+# TODO: parallelization
 
 
 class KFold(_BaseKFold):
@@ -197,7 +197,7 @@ class _KennardStone:
 
     def get_indexes(self, X) -> List[List[int]]:
         # check input array
-        X = check_array(X, ensure_2d=True, dtype="numeric")
+        X: np.ndarray = check_array(X, ensure_2d=True, dtype="numeric")
 
         # drop no variance
         vselector = VarianceThreshold(threshold=0.0)
@@ -293,20 +293,20 @@ class _KennardStone:
 
 
 if __name__ == "__main__":
-    import pandas as pd
     from sklearn.model_selection import cross_validate
     from sklearn.datasets import load_diabetes
     from sklearn.ensemble import RandomForestRegressor
-    from sklearn.metrics import mean_squared_error as mse
+    from sklearn.metrics import mean_squared_error
 
     data = load_diabetes(as_frame=True)
-    X: pd.DataFrame = data.data
-    y: pd.Series = data.target
+    X = data.data
+    y = data.target
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
     rf = RandomForestRegressor(n_jobs=-1, random_state=334)
     rf.fit(X_train, y_train)
-    print(mse(rf.predict(X_test), y_test))
+    y_pred_on_test = rf.predict(X_test)
+    print(mean_squared_error(y_test, y_pred_on_test, squared=False))
 
     kf = KFold(n_splits=5)
     print(cross_validate(rf, X, y, scoring="neg_mean_squared_error", cv=kf))
