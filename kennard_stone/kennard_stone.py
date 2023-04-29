@@ -2,7 +2,10 @@
 Copyright © 2021 yu9824
 """
 
-from typing import List, Union, Optional
+from typing import overload, Union, Optional
+
+# deprecated in Python >= 3.9
+from typing import List
 from itertools import chain
 import warnings
 
@@ -20,7 +23,12 @@ from sklearn.utils import check_array
 # TODO: unittest?
 # TODO: sphinx documentation？
 
+
 class KFold(_BaseKFold):
+    @overload
+    def __init__(self, n_splits: int = 5):
+        pass
+
     def __init__(self, n_splits: int = 5, **kwargs):
         """K-Folds cross-validator using the Kennard-Stone algorithm.
 
@@ -88,7 +96,22 @@ class KSSplit(BaseShuffleSplit):
             yield ind_train, ind_test
 
 
-def train_test_split(*arrays, test_size=None, train_size=None, **kwargs):
+
+@overload
+def train_test_split(
+    *arrays,
+    test_size: Optional[Union[float, int]] = None,
+    train_size: Optional[Union[float, int]] = None
+) -> list:
+    pass
+
+
+def train_test_split(
+    *arrays,
+    test_size: Optional[Union[float, int]] = None,
+    train_size: Optional[Union[float, int]] = None,
+    **kwargs
+) -> list:
     """Split arrays or matrices into train and test subsets using the
     Kennard-Stone algorithm.
 
@@ -118,6 +141,13 @@ def train_test_split(*arrays, test_size=None, train_size=None, **kwargs):
     ------
     ValueError
     """
+    if "shuffle" in kwargs:
+        warnings.warn(
+            "`shuffle` is unnecessary because it is always shuffled"
+            " in this algorithm.",
+            UserWarning,
+        )
+
     if "random_state" in kwargs:
         warnings.warn(
             "`random_state` is unnecessary since it is uniquely determined"
@@ -164,7 +194,7 @@ class _KennardStone:
 
     def get_indexes(self, X) -> List[List[int]]:
         # check input array
-        X: np.ndarray = check_array(X, ensure_2d=True)
+        X = check_array(X, ensure_2d=True, dtype="numeric")
 
         if self.scale:
             scaler = StandardScaler()
