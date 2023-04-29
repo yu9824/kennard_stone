@@ -214,7 +214,9 @@ class _KennardStone:
         distance_to_ave = np.sum(np.square(X - X.mean(axis=0)), axis=1)
 
         # 最大値を取るサンプル (平均からの距離が一番遠い) のindex_numberを保存
-        idx_farthest = np.argsort(distance_to_ave)[::-1][: self.n_groups]
+        idx_farthest: List[int] = np.argsort(distance_to_ave)[::-1][
+            : self.n_groups
+        ].tolist()
 
         # 抜き出した (train用) サンプルのindex_numberを保存しとくリスト
         lst_idx_selected: List[List[int]] = [[_idx] for _idx in idx_farthest]

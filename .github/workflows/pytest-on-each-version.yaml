@@ -1,6 +1,6 @@
 # Regrences
 # - https://enu23456.hatenablog.com/entry/2022/11/24/195744
-name: Python Package using Conda
+name: Test on each version
 
 on: [push]
 
