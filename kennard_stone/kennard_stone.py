@@ -17,6 +17,7 @@ from sklearn.model_selection._split import _validate_shuffle_split
 from sklearn.utils.validation import _num_samples
 from sklearn.utils import indexable, _safe_indexing
 from sklearn.preprocessing import StandardScaler
+from sklearn.feature_selection import VarianceThreshold
 from sklearn.utils import check_array
 
 
@@ -94,7 +95,6 @@ class KSSplit(BaseShuffleSplit):
             ind_test = indexes[:n_test]
             ind_train = indexes[n_test : (n_test + n_train)]
             yield ind_train, ind_test
-
 
 
 @overload
@@ -195,6 +195,10 @@ class _KennardStone:
     def get_indexes(self, X) -> List[List[int]]:
         # check input array
         X = check_array(X, ensure_2d=True, dtype="numeric")
+
+        # drop no variance
+        vselector = VarianceThreshold(threshold=0.0)
+        X = vselector.fit_transform(X)
 
         if self.scale:
             scaler = StandardScaler()
