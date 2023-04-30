@@ -5,7 +5,7 @@ Copyright © 2021 yu9824
 from typing import overload, Union, Optional
 
 # deprecated in Python >= 3.9
-from typing import List
+from typing import List, Set
 from itertools import chain
 import warnings
 
@@ -18,6 +18,7 @@ from sklearn.utils.validation import _num_samples
 from sklearn.utils import indexable, _safe_indexing
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import VarianceThreshold
+from sklearn.metrics.pairwise import pairwise_distances
 from sklearn.utils import check_array
 
 
@@ -182,7 +183,13 @@ def train_test_split(
 
 
 class _KennardStone:
-    def __init__(self, n_groups: int = 1, scale: bool = True) -> None:
+    def __init__(
+        self,
+        n_groups: int = 1,
+        scale: bool = True,
+        metric: str = "euclidean",
+        n_jobs: Optional[int] = None,
+    ) -> None:
         """The root program of the Kennard-Stone algorithm.
 
         Parameters
@@ -194,6 +201,8 @@ class _KennardStone:
         """
         self.n_groups = n_groups
         self.scale = scale
+        self.metric = metric
+        self.n_jobs = n_jobs
 
     def get_indexes(self, X) -> List[List[int]]:
         # check input array
@@ -208,10 +217,21 @@ class _KennardStone:
             X = scaler.fit_transform(X)
 
         # Save the original X.
-        self._original_X = X.copy()
+        # self._original_X = X.copy()
+
+        # Pre-calculate the distance matrix.
+        self.distance_matrix = pairwise_distances(
+            X, metric=self.metric, n_jobs=self.n_jobs
+        )
 
         # 全ての組成に対してそれぞれの平均との距離の二乗を配列として得る． (サンプル数の分だけ存在)
-        distance_to_ave = np.sum(np.square(X - X.mean(axis=0)), axis=1)
+        # distance_to_ave = np.sum(np.square(X - X.mean(axis=0)), axis=1)
+        distance_to_ave = pairwise_distances(
+            X,
+            X.mean(axis=0, keepdims=True),
+            metric=self.metric,
+            n_jobs=self.n_jobs,
+        ).flatten()
 
         # 最大値を取るサンプル (平均からの距離が一番遠い) のindex_numberを保存
         idx_farthest: List[int] = np.argsort(distance_to_ave)[::-1][
@@ -219,51 +239,49 @@ class _KennardStone:
         ].tolist()
 
         # 抜き出した (train用) サンプルのindex_numberを保存しとくリスト
-        lst_idx_selected: List[List[int]] = [[_idx] for _idx in idx_farthest]
+        lst_indexes_selected: List[List[int]] = [
+            [_idx] for _idx in idx_farthest
+        ]
 
         # まだ抜き出しておらず，残っているサンプル (test用) サンプルのindex_numberを保存しておくリスト
-        idx_remaining = np.arange(len(X))
-
-        # 抜き出した (train用) サンプルに選ばれたサンプルをtrain用のものから削除
-        X = np.delete(X, idx_farthest, axis=0)
-        idx_remaining = np.delete(idx_remaining, idx_farthest, axis=0)
+        indexes_remaining: List[int] = [
+            _idx for _idx in range(len(X)) if _idx not in set(idx_farthest)
+        ]
 
         # 近い順のindexのリスト．i.e. 最初がtest向き，最後がtrain向き
         indexes = self._sort(
-            X=X, lst_idx_selected=lst_idx_selected, idx_remaining=idx_remaining
+            lst_indexes_selected=lst_indexes_selected,
+            indexes_remaining=indexes_remaining,
         )
+
         assert (
             len(tuple(chain.from_iterable(indexes)))
             == len(set(chain.from_iterable(indexes)))
-            == len(self._original_X)
+            == len(X)
         )
 
         return indexes
 
     def _sort(
         self,
-        X,
-        lst_idx_selected: List[List[int]],
-        idx_remaining: Union[List[int], np.ndarray],
+        lst_indexes_selected: List[List[int]],
+        indexes_remaining: List[int],
     ) -> List[List[int]]:
-        samples_selected: np.ndarray = self._original_X[
-            list(chain.from_iterable(lst_idx_selected))
+
+        idx_selected: List[int] = list(
+            chain.from_iterable(lst_indexes_selected)
+        )
+        min_distance_to_samples_selected: np.ndarray = self.distance_matrix[
+            np.ix_(idx_selected, indexes_remaining)
         ]
 
         # まだ選択されていない各サンプルにおいて、これまで選択されたすべてのサンプルとの間で
         # ユークリッド距離を計算し，その最小の値を「代表長さ」とする．
 
-        min_distance_to_samples_selected = np.sum(
-            np.square(
-                np.expand_dims(samples_selected, 1) - np.expand_dims(X, 0)
-            ),
-            axis=2,
-        )
-
-        _idxes_delete: List[int] = []
-        n_selected = len(lst_idx_selected[0])
-        for k in range(len(lst_idx_selected)):
-            if 0 < len(idx_remaining) - k:
+        _st_i_delete: Set[int] = set()
+        n_selected = len(lst_indexes_selected[0])
+        for k in range(len(lst_indexes_selected)):
+            if 0 < len(indexes_remaining) - k:
                 _lst_sorted_args = np.argsort(
                     np.min(
                         min_distance_to_samples_selected[
@@ -272,43 +290,53 @@ class _KennardStone:
                         axis=0,
                     ),
                 )
-                j = len(idx_remaining) - 1
-                while _lst_sorted_args[j] in set(_idxes_delete):
+                j = len(indexes_remaining) - 1
+                while _lst_sorted_args[j] in _st_i_delete:
                     j -= 1
                 else:
                     # 最大値を取るサンプル (代表長さが最も大きい) のindex_numberを保存
-                    idx_selected = _lst_sorted_args[j]
+                    i_deleted = _lst_sorted_args[j]
+                    idx_selected: int = indexes_remaining[i_deleted]
 
-                lst_idx_selected[k].append(idx_remaining[idx_selected])
-                _idxes_delete.append(idx_selected)
+                lst_indexes_selected[k].append(idx_selected)
+                _st_i_delete.add(i_deleted)
             else:
                 break
 
         # delete
-        X = np.delete(X, _idxes_delete, axis=0)
-        idx_remaining = np.delete(idx_remaining, _idxes_delete, axis=0)
+        indexes_remaining = [
+            _idx
+            for i, _idx in enumerate(indexes_remaining)
+            if i not in _st_i_delete
+        ]
 
-        if len(idx_remaining):  # まだ残っているなら再帰
-            return self._sort(X, lst_idx_selected, idx_remaining)
+        if len(indexes_remaining):  # まだ残っているなら再帰
+            return self._sort(lst_indexes_selected, indexes_remaining)
         else:  # もうないなら遠い順から近い順 (test側) に並べ替えて終える
-            return [_idx_selected[::-1] for _idx_selected in lst_idx_selected]
+            return [
+                _idx_selected[::-1] for _idx_selected in lst_indexes_selected
+            ]
 
 
 if __name__ == "__main__":
     from sklearn.model_selection import cross_validate
-    from sklearn.datasets import load_diabetes
+    from sklearn.datasets import load_diabetes, fetch_california_housing
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.metrics import mean_squared_error
 
+    # data = fetch_california_housing(as_frame=True)
     data = load_diabetes(as_frame=True)
     X = data.data
     y = data.target
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-    rf = RandomForestRegressor(n_jobs=-1, random_state=334)
-    rf.fit(X_train, y_train)
-    y_pred_on_test = rf.predict(X_test)
-    print(mean_squared_error(y_test, y_pred_on_test, squared=False))
+    ks = _KennardStone(n_groups=2, scale=True)
+    ks.get_indexes(X)
 
-    kf = KFold(n_splits=5)
-    print(cross_validate(rf, X, y, scoring="neg_mean_squared_error", cv=kf))
+    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    # rf = RandomForestRegressor(n_jobs=-1, random_state=334)
+    # rf.fit(X_train, y_train)
+    # y_pred_on_test = rf.predict(X_test)
+    # print(mean_squared_error(y_test, y_pred_on_test, squared=False))
+
+    # kf = KFold(n_splits=5)
+    # print(cross_validate(rf, X, y, scoring="neg_mean_squared_error", cv=kf))
