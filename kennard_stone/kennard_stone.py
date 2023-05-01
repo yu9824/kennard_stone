@@ -8,7 +8,6 @@ from typing import overload, Union, Optional
 from typing import List, Set
 from itertools import chain
 import warnings
-import sys
 
 import numpy as np
 
@@ -252,139 +251,92 @@ class _KennardStone:
 
         # recursion limit settings
 
-        with RecursionNumberSettings(
-            recursion_limit=n_samples + sys.getrecursionlimit()
+        # params
+        indexes_selected = idx_farthest
+        lst_indexes_selected_prev = [[] for _ in range(self.n_groups)]
+        indexes_remaining_prev = list(range(n_samples))
+
+        for _ in range(
+            n_samples // self.n_groups + bool(n_samples % self.n_groups) - 1
         ):
-            # 近い順のindexのリスト．i.e. 最初がtest向き，最後がtrain向き
-            indexes = self._sort(
-                indexes_selected=idx_farthest,
-                distance_min=distance_min,
-                # 抜き出した (train用) サンプルのindex_numberを保存しとくリスト
-                lst_indexes_selected_prev=[[] for _ in range(self.n_groups)],
-                # まだ抜き出しておらず，残っているサンプル (test用) サンプルのindex_numberを保存しておくリスト
-                indexes_remaining_prev=list(range(n_samples)),
-            )
+            # collect the current indexes
+            indexes_remaining: List[int] = list()
+            arg_selected: List[int] = list()
+            for j, idx in enumerate(indexes_remaining_prev):
+                if idx in set(indexes_selected):
+                    arg_selected.append(j)
+                else:
+                    indexes_remaining.append(idx)
+            n_remaining = len(indexes_remaining)
 
-        assert (
-            len(tuple(chain.from_iterable(indexes)))
-            == len(set(chain.from_iterable(indexes)))
-            == n_samples
-        )
+            lst_indexes_selected = [
+                indexes_selected_prev + [index_selected]
+                for indexes_selected_prev, index_selected in zip(
+                    lst_indexes_selected_prev, indexes_selected
+                )
+            ]
+            # /collect the current indexes
 
-        return indexes
+            # 代表長さを決定する
+            distance_selected: np.ndarray = self.distance_matrix[
+                np.ix_(indexes_selected, indexes_remaining)
+            ]
+            distance_min = np.delete(distance_min, arg_selected, axis=1)
 
-    def _sort(
-        self,
-        indexes_selected: List[int],
-        distance_min: np.ndarray,  # shape: (n_groups, len(indexes_remaining_prev))
-        lst_indexes_selected_prev: List[List[int]],
-        indexes_remaining_prev: List[int],
-    ) -> List[List[int]]:
-
-        assert len(indexes_remaining_prev) == distance_min.shape[1]
-        assert self.n_groups == len(lst_indexes_selected_prev)
-        assert self.n_groups == len(indexes_selected)
-
-        # preparation
-        # indexes_selected: List[int] = list(
-        #     chain.from_iterable(lst_indexes_selected_prev)
-        # )
-
-        # collect the current indexes
-        indexes_remaining: List[int] = list()
-        arg_selected: List[int] = list()
-        for j, idx in enumerate(indexes_remaining_prev):
-            if idx in set(indexes_selected):
-                arg_selected.append(j)
-            else:
-                indexes_remaining.append(idx)
-        n_remaining = len(indexes_remaining)
-
-        lst_indexes_selected = [
-            indexes_selected_prev + [index_selected]
-            for indexes_selected_prev, index_selected in zip(
-                lst_indexes_selected_prev, indexes_selected
-            )
-        ]
-        # /collect the current indexes
-
-        # 代表長さを決定する
-        distance_selected: np.ndarray = self.distance_matrix[
-            np.ix_(indexes_selected, indexes_remaining)
-        ]
-        distance_min = np.delete(distance_min, arg_selected, axis=1)
-
-        distance_min = np.min(
-            np.concatenate(
-                [
-                    distance_selected.reshape(self.n_groups, 1, -1),
-                    distance_min.reshape(self.n_groups, 1, -1),
-                ],
+            distance_min: np.ndarray = np.min(
+                np.concatenate(
+                    [
+                        distance_selected.reshape(self.n_groups, 1, -1),
+                        distance_min.reshape(self.n_groups, 1, -1),
+                    ],
+                    axis=1,
+                ),
                 axis=1,
-            ),
-            axis=1,
-        )
-
-        # まだ選択されていない各サンプルにおいて、これまで選択されたすべてのサンプルとの間で
-        # ユークリッド距離を計算し，その最小の値を「代表長さ」とする．
-
-        _st_arg_delete: Set[int] = set()
-        indexes_selected_next: List[int] = list()
-        for k in range(self.n_groups):
-            if k == 0:
-                arg_delete = np.argmax(
-                    distance_min[k],
-                )
-            elif 0 < n_remaining - k:
-                sorted_args = np.argsort(
-                    distance_min[k],
-                )
-                # 最大値を取るサンプル (代表長さが最も大きい) のindex_numberを保存
-                for j in range(n_remaining - k, -1, -1):
-                    arg_delete = sorted_args[j]
-                    if arg_delete not in _st_arg_delete:
-                        break
-            else:
-                break
-
-            _st_arg_delete.add(arg_delete)
-            index_selected: int = indexes_remaining[arg_delete]
-
-            indexes_selected_next.append(index_selected)
-
-        if n_remaining - len(indexes_selected_next):  # まだ残っているなら再帰
-            return self._sort(
-                indexes_selected=indexes_selected_next,
-                distance_min=distance_min,
-                lst_indexes_selected_prev=lst_indexes_selected,
-                indexes_remaining_prev=indexes_remaining,
             )
+
+            # まだ選択されていない各サンプルにおいて、これまで選択されたすべてのサンプルとの間で
+            # ユークリッド距離を計算し，その最小の値を「代表長さ」とする．
+
+            _st_arg_delete: Set[int] = set()
+            indexes_selected_next: List[int] = list()
+            for k in range(self.n_groups):
+                if k == 0:
+                    arg_delete = np.argmax(
+                        distance_min[k],
+                    )
+                elif 0 < n_remaining - k:
+                    sorted_args = np.argsort(
+                        distance_min[k],
+                    )
+                    # 最大値を取るサンプル (代表長さが最も大きい) のindex_numberを保存
+                    for j in range(n_remaining - k, -1, -1):
+                        arg_delete = sorted_args[j]
+                        if arg_delete not in _st_arg_delete:
+                            break
+                else:
+                    break
+
+                _st_arg_delete.add(arg_delete)
+                index_selected: int = indexes_remaining[arg_delete]
+
+                indexes_selected_next.append(index_selected)
+
+            indexes_selected = indexes_selected_next
+            lst_indexes_selected_prev = lst_indexes_selected
+            indexes_remaining_prev = indexes_remaining
         else:  # もうないなら遠い順から近い順 (test側) に並べ替えて終える
-            output: List[List[int]] = []
+            assert n_remaining - len(indexes_selected_next) <= 0
+            indexes_output: List[List[int]] = []
             for k in range(self.n_groups):
                 indexes_selected_reversed = lst_indexes_selected[k][::-1]
                 if k < len(indexes_selected_next):
                     index_selected_next = indexes_selected_next[k]
-                    output.append(
+                    indexes_output.append(
                         [index_selected_next] + indexes_selected_reversed
                     )
                 else:
-                    output.append(indexes_selected_reversed)
-            return output
-
-
-class RecursionNumberSettings:
-    def __init__(self, recursion_limit: int) -> None:
-        self.recursion_limit = recursion_limit
-        self.__default_recursion_limit = sys.getrecursionlimit()
-
-    def __enter__(self):
-        if self.recursion_limit > self.__default_recursion_limit:
-            sys.setrecursionlimit(self.recursion_limit)
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        sys.setrecursionlimit(self.__default_recursion_limit)
+                    indexes_output.append(indexes_selected_reversed)
+            return indexes_output
 
 
 if __name__ == "__main__":
