@@ -8,6 +8,7 @@ from typing import overload, Union, Optional
 from typing import List, Set
 from itertools import chain
 import warnings
+import sys
 
 import numpy as np
 
@@ -29,10 +30,12 @@ from sklearn.utils import check_array
 
 class KFold(_BaseKFold):
     @overload
-    def __init__(self, n_splits: int = 5):
+    def __init__(self, n_splits: int = 5, n_jobs: Optional[int] = None):
         pass
 
-    def __init__(self, n_splits: int = 5, **kwargs):
+    def __init__(
+        self, n_splits: int = 5, n_jobs: Optional[int] = None, **kwargs
+    ):
         """K-Folds cross-validator using the Kennard-Stone algorithm.
 
         Parameters
@@ -72,17 +75,20 @@ class KSSplit(BaseShuffleSplit):
         n_splits: int = 1,
         *,
         test_size: Optional[Union[float, int]] = None,
-        train_size: Optional[Union[float, int]] = None
+        train_size: Optional[Union[float, int]] = None,
+        n_jobs: Optional[int] = None,
     ):
         super().__init__(
             n_splits=n_splits, test_size=test_size, train_size=train_size
         )
+        self.n_jobs = n_jobs
+
         assert self.get_n_splits() == 1, "n_splits must be 1"
         self._default_test_size = 0.1
 
     # overwrap abstractmethod
     def _iter_indices(self, X, y=None, groups=None):
-        ks = _KennardStone(n_groups=1)
+        ks = _KennardStone(n_groups=1, n_jobs=self.n_jobs)
         indexes = ks.get_indexes(X)[0]
 
         n_samples = _num_samples(X)
@@ -103,7 +109,8 @@ class KSSplit(BaseShuffleSplit):
 def train_test_split(
     *arrays,
     test_size: Optional[Union[float, int]] = None,
-    train_size: Optional[Union[float, int]] = None
+    train_size: Optional[Union[float, int]] = None,
+    n_jobs: Optional[int] = None,
 ) -> list:
     pass
 
@@ -112,7 +119,8 @@ def train_test_split(
     *arrays,
     test_size: Optional[Union[float, int]] = None,
     train_size: Optional[Union[float, int]] = None,
-    **kwargs
+    n_jobs: Optional[int] = None,
+    **kwargs,
 ) -> list:
     """Split arrays or matrices into train and test subsets using the
     Kennard-Stone algorithm.
@@ -172,7 +180,7 @@ def train_test_split(
     )
 
     CVClass = KSSplit
-    cv = CVClass(test_size=n_test, train_size=n_train)
+    cv = CVClass(test_size=n_test, train_size=n_train, n_jobs=n_jobs)
 
     train, test = next(cv.split(X=arrays[0]))
 
@@ -240,21 +248,20 @@ class _KennardStone:
             : self.n_groups
         ].tolist()
 
-        # 抜き出した (train用) サンプルのindex_numberを保存しとくリスト
-        lst_indexes_selected: List[List[int]] = [
-            [_idx] for _idx in idx_farthest
-        ]
+        distance_min = self.distance_matrix[idx_farthest, :]
 
-        # まだ抜き出しておらず，残っているサンプル (test用) サンプルのindex_numberを保存しておくリスト
-        indexes_remaining: List[int] = [
-            _idx for _idx in range(n_samples) if _idx not in set(idx_farthest)
-        ]
+        # recursion limit settings
 
-        # 近い順のindexのリスト．i.e. 最初がtest向き，最後がtrain向き
-        indexes = self._sort(
-            lst_indexes_selected=lst_indexes_selected,
-            indexes_remaining=indexes_remaining,
-        )
+        with RecursionNumberSettings(recursion_limit=n_samples + 1):
+            # 近い順のindexのリスト．i.e. 最初がtest向き，最後がtrain向き
+            indexes = self._sort(
+                indexes_selected=idx_farthest,
+                distance_min=distance_min,
+                # 抜き出した (train用) サンプルのindex_numberを保存しとくリスト
+                lst_indexes_selected_prev=[[] for _ in range(self.n_groups)],
+                # まだ抜き出しておらず，残っているサンプル (test用) サンプルのindex_numberを保存しておくリスト
+                indexes_remaining_prev=list(range(n_samples)),
+            )
 
         assert (
             len(tuple(chain.from_iterable(indexes)))
@@ -266,64 +273,115 @@ class _KennardStone:
 
     def _sort(
         self,
-        lst_indexes_selected: List[List[int]],
-        indexes_remaining: List[int],
+        indexes_selected: List[int],
+        distance_min: np.ndarray,  # shape: (n_groups, len(indexes_remaining_prev))
+        lst_indexes_selected_prev: List[List[int]],
+        indexes_remaining_prev: List[int],
     ) -> List[List[int]]:
 
-        idx_selected: List[int] = list(
-            chain.from_iterable(lst_indexes_selected)
-        )
-        min_distance_to_samples_selected: np.ndarray = self.distance_matrix[
-            np.ix_(idx_selected, indexes_remaining)
-        ].reshape(
-            self.n_groups,
-            len(idx_selected) // self.n_groups,
-            -1,  # len(indexes_remaining)
+        assert len(indexes_remaining_prev) == distance_min.shape[1]
+        assert self.n_groups == len(lst_indexes_selected_prev)
+        assert self.n_groups == len(indexes_selected)
+
+        # preparation
+        # indexes_selected: List[int] = list(
+        #     chain.from_iterable(lst_indexes_selected_prev)
+        # )
+
+        # collect the current indexes
+        indexes_remaining: List[int] = list()
+        arg_selected: List[int] = list()
+        for j, idx in enumerate(indexes_remaining_prev):
+            if idx in set(indexes_selected):
+                arg_selected.append(j)
+            else:
+                indexes_remaining.append(idx)
+        n_remaining = len(indexes_remaining)
+
+        lst_indexes_selected = [
+            indexes_selected_prev + [index_selected]
+            for indexes_selected_prev, index_selected in zip(
+                lst_indexes_selected_prev, indexes_selected
+            )
+        ]
+        # /collect the current indexes
+
+        # 代表長さを決定する
+        distance_selected: np.ndarray = self.distance_matrix[
+            np.ix_(indexes_selected, indexes_remaining)
+        ]
+        distance_min = np.delete(distance_min, arg_selected, axis=1)
+
+        distance_min = np.min(
+            np.concatenate(
+                [
+                    distance_selected.reshape(self.n_groups, 1, -1),
+                    distance_min.reshape(self.n_groups, 1, -1),
+                ],
+                axis=1,
+            ),
+            axis=1,
         )
 
         # まだ選択されていない各サンプルにおいて、これまで選択されたすべてのサンプルとの間で
         # ユークリッド距離を計算し，その最小の値を「代表長さ」とする．
 
-        _st_i_delete: Set[int] = set()
+        _st_arg_delete: Set[int] = set()
+        indexes_selected_next: List[int] = list()
         for k in range(self.n_groups):
             if k == 0:
-                i_deleted = np.argmax(
-                    np.min(min_distance_to_samples_selected[k], axis=0)
+                arg_delete = np.argmax(
+                    distance_min[k],
                 )
-            elif 0 < len(indexes_remaining) - k:
-                _lst_sorted_args = np.argsort(
-                    np.min(
-                        min_distance_to_samples_selected[k],
-                        axis=0,
-                    ),
+            elif 0 < n_remaining - k:
+                sorted_args = np.argsort(
+                    distance_min[k],
                 )
-                j = len(indexes_remaining) - 1
-                while _lst_sorted_args[j] in _st_i_delete:
-                    j -= 1
-                else:
-                    # 最大値を取るサンプル (代表長さが最も大きい) のindex_numberを保存
-                    i_deleted = _lst_sorted_args[j]
+                # 最大値を取るサンプル (代表長さが最も大きい) のindex_numberを保存
+                for j in range(n_remaining - k, -1, -1):
+                    arg_delete = sorted_args[j]
+                    if arg_delete not in _st_arg_delete:
+                        break
             else:
                 break
 
-            idx_selected: int = indexes_remaining[i_deleted]
+            _st_arg_delete.add(arg_delete)
+            index_selected: int = indexes_remaining[arg_delete]
 
-            lst_indexes_selected[k].append(idx_selected)
-            _st_i_delete.add(i_deleted)
+            indexes_selected_next.append(index_selected)
 
-        # delete
-        indexes_remaining = [
-            _idx
-            for i, _idx in enumerate(indexes_remaining)
-            if i not in _st_i_delete
-        ]
-
-        if len(indexes_remaining):  # まだ残っているなら再帰
-            return self._sort(lst_indexes_selected, indexes_remaining)
+        if n_remaining - len(indexes_selected_next):  # まだ残っているなら再帰
+            return self._sort(
+                indexes_selected=indexes_selected_next,
+                distance_min=distance_min,
+                lst_indexes_selected_prev=lst_indexes_selected,
+                indexes_remaining_prev=indexes_remaining,
+            )
         else:  # もうないなら遠い順から近い順 (test側) に並べ替えて終える
-            return [
-                _idx_selected[::-1] for _idx_selected in lst_indexes_selected
-            ]
+            output: List[List[int]] = []
+            for k in range(self.n_groups):
+                indexes_selected_reversed = lst_indexes_selected[k][::-1]
+                if k < len(indexes_selected_next):
+                    index_selected_next = indexes_selected_next[k]
+                    output.append(
+                        [index_selected_next] + indexes_selected_reversed
+                    )
+                else:
+                    output.append(indexes_selected_reversed)
+            return output
+
+
+class RecursionNumberSettings:
+    def __init__(self, recursion_limit: int) -> None:
+        self.recursion_limit = recursion_limit
+        self.__default_recursion_limit = sys.getrecursionlimit()
+
+    def __enter__(self):
+        sys.setrecursionlimit(self.recursion_limit)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        sys.setrecursionlimit(self.__default_recursion_limit)
 
 
 if __name__ == "__main__":
@@ -340,11 +398,13 @@ if __name__ == "__main__":
     ks = _KennardStone(n_groups=2, scale=True, n_jobs=-1)
     ks.get_indexes(X)
 
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-    # rf = RandomForestRegressor(n_jobs=-1, random_state=334)
-    # rf.fit(X_train, y_train)
-    # y_pred_on_test = rf.predict(X_test)
-    # print(mean_squared_error(y_test, y_pred_on_test, squared=False))
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, n_jobs=-1
+    )
+    rf = RandomForestRegressor(n_jobs=-1, random_state=334)
+    rf.fit(X_train, y_train)
+    y_pred_on_test = rf.predict(X_test)
+    print(mean_squared_error(y_test, y_pred_on_test, squared=False))
 
-    # kf = KFold(n_splits=5)
-    # print(cross_validate(rf, X, y, scoring="neg_mean_squared_error", cv=kf))
+    kf = KFold(n_splits=5, n_jobs=-1)
+    print(cross_validate(rf, X, y, scoring="neg_mean_squared_error", cv=kf))
