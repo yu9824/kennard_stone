@@ -252,7 +252,9 @@ class _KennardStone:
 
         # recursion limit settings
 
-        with RecursionNumberSettings(recursion_limit=n_samples + 1):
+        with RecursionNumberSettings(
+            recursion_limit=n_samples + sys.getrecursionlimit()
+        ):
             # 近い順のindexのリスト．i.e. 最初がtest向き，最後がtrain向き
             indexes = self._sort(
                 indexes_selected=idx_farthest,
@@ -377,7 +379,8 @@ class RecursionNumberSettings:
         self.__default_recursion_limit = sys.getrecursionlimit()
 
     def __enter__(self):
-        sys.setrecursionlimit(self.recursion_limit)
+        if self.recursion_limit > self.__default_recursion_limit:
+            sys.setrecursionlimit(self.recursion_limit)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -390,21 +393,22 @@ if __name__ == "__main__":
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.metrics import mean_squared_error
 
-    data = fetch_california_housing(as_frame=True)
-    # data = load_diabetes(as_frame=True)
+    # data = fetch_california_housing(as_frame=True)
+    data = load_diabetes(as_frame=True)
     X = data.data
     y = data.target
 
-    ks = _KennardStone(n_groups=2, scale=True, n_jobs=-1)
+    # ks = _KennardStone(n_groups=2, scale=True, n_jobs=-1)
+    ks = _KennardStone(n_groups=1, scale=True, n_jobs=-1)
     ks.get_indexes(X)
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, n_jobs=-1
-    )
-    rf = RandomForestRegressor(n_jobs=-1, random_state=334)
-    rf.fit(X_train, y_train)
-    y_pred_on_test = rf.predict(X_test)
-    print(mean_squared_error(y_test, y_pred_on_test, squared=False))
+    # X_train, X_test, y_train, y_test = train_test_split(
+    #     X, y, test_size=0.2, n_jobs=-1
+    # )
+    # rf = RandomForestRegressor(n_jobs=-1, random_state=334)
+    # rf.fit(X_train, y_train)
+    # y_pred_on_test = rf.predict(X_test)
+    # print(mean_squared_error(y_test, y_pred_on_test, squared=False))
 
-    kf = KFold(n_splits=5, n_jobs=-1)
-    print(cross_validate(rf, X, y, scoring="neg_mean_squared_error", cv=kf))
+    # kf = KFold(n_splits=5, n_jobs=-1)
+    # print(cross_validate(rf, X, y, scoring="neg_mean_squared_error", cv=kf))
