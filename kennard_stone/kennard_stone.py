@@ -15,7 +15,8 @@ from sklearn.model_selection._split import BaseShuffleSplit
 from sklearn.model_selection._split import _BaseKFold
 from sklearn.model_selection._split import _validate_shuffle_split
 from sklearn.utils.validation import _num_samples
-from sklearn.utils import indexable, _safe_indexing
+from sklearn.utils import indexable
+from sklearn.utils import _safe_indexing
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.metrics.pairwise import pairwise_distances
@@ -273,20 +274,25 @@ class _KennardStone:
         )
         min_distance_to_samples_selected: np.ndarray = self.distance_matrix[
             np.ix_(idx_selected, indexes_remaining)
-        ]
+        ].reshape(
+            self.n_groups,
+            len(idx_selected) // self.n_groups,
+            -1,  # len(indexes_remaining)
+        )
 
         # まだ選択されていない各サンプルにおいて、これまで選択されたすべてのサンプルとの間で
         # ユークリッド距離を計算し，その最小の値を「代表長さ」とする．
 
         _st_i_delete: Set[int] = set()
-        n_selected = len(lst_indexes_selected[0])
-        for k in range(len(lst_indexes_selected)):
-            if 0 < len(indexes_remaining) - k:
+        for k in range(self.n_groups):
+            if k == 0:
+                i_deleted = np.argmax(
+                    np.min(min_distance_to_samples_selected[k], axis=0)
+                )
+            elif 0 < len(indexes_remaining) - k:
                 _lst_sorted_args = np.argsort(
                     np.min(
-                        min_distance_to_samples_selected[
-                            n_selected * k : n_selected * (k + 1)
-                        ],
+                        min_distance_to_samples_selected[k],
                         axis=0,
                     ),
                 )
@@ -296,12 +302,13 @@ class _KennardStone:
                 else:
                     # 最大値を取るサンプル (代表長さが最も大きい) のindex_numberを保存
                     i_deleted = _lst_sorted_args[j]
-                    idx_selected: int = indexes_remaining[i_deleted]
-
-                lst_indexes_selected[k].append(idx_selected)
-                _st_i_delete.add(i_deleted)
             else:
                 break
+
+            idx_selected: int = indexes_remaining[i_deleted]
+
+            lst_indexes_selected[k].append(idx_selected)
+            _st_i_delete.add(i_deleted)
 
         # delete
         indexes_remaining = [
