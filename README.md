@@ -161,3 +161,11 @@ Copyright (c) 2021 yu9824
 ### v2.0.1
 
 - Fix bug with Python3.7.
+
+### v2.1.0
+
+- Optimize algorithm
+- Deal with Large number of data.
+  - parallel calculation when calculating distance
+  - recursion number settings
+- Add other than "euclidean" calculation methods to options
