@@ -208,6 +208,7 @@ class _KennardStone:
     def get_indexes(self, X) -> List[List[int]]:
         # check input array
         X: np.ndarray = check_array(X, ensure_2d=True, dtype="numeric")
+        n_samples = X.shape[0]
 
         # drop no variance
         vselector = VarianceThreshold(threshold=0.0)
@@ -246,7 +247,7 @@ class _KennardStone:
 
         # まだ抜き出しておらず，残っているサンプル (test用) サンプルのindex_numberを保存しておくリスト
         indexes_remaining: List[int] = [
-            _idx for _idx in range(len(X)) if _idx not in set(idx_farthest)
+            _idx for _idx in range(n_samples) if _idx not in set(idx_farthest)
         ]
 
         # 近い順のindexのリスト．i.e. 最初がtest向き，最後がtrain向き
@@ -258,7 +259,7 @@ class _KennardStone:
         assert (
             len(tuple(chain.from_iterable(indexes)))
             == len(set(chain.from_iterable(indexes)))
-            == len(X)
+            == n_samples
         )
 
         return indexes
@@ -331,12 +332,12 @@ if __name__ == "__main__":
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.metrics import mean_squared_error
 
-    # data = fetch_california_housing(as_frame=True)
-    data = load_diabetes(as_frame=True)
+    data = fetch_california_housing(as_frame=True)
+    # data = load_diabetes(as_frame=True)
     X = data.data
     y = data.target
 
-    ks = _KennardStone(n_groups=2, scale=True)
+    ks = _KennardStone(n_groups=2, scale=True, n_jobs=-1)
     ks.get_indexes(X)
 
     # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
