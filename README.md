@@ -1,10 +1,11 @@
 # Kennard Stone
+
 [![python_badge](https://img.shields.io/pypi/pyversions/kennard-stone)](https://pypi.org/project/kennard-stone/)
 [![license_badge](https://img.shields.io/pypi/l/kennard-stone)](https://pypi.org/project/kennard-stone/)
 [![PyPI version](https://badge.fury.io/py/kennard-stone.svg)](https://pypi.org/project/kennard-stone/)
 [![Downloads](https://pepy.tech/badge/kennard-stone)](https://pepy.tech/project/kennard-stone)
 
-[![Python Package using Conda](https://github.com/yu9824/kennard_stone/actions/workflows/python-package-conda.yaml/badge.svg)](https://github.com/yu9824/kennard_stone/actions/workflows/python-package-conda.yaml)
+[![Test on each version](https://github.com/yu9824/kennard_stone/actions/workflows/pytest-on-each-version.yaml/badge.svg)](https://github.com/yu9824/kennard_stone/actions/workflows/pytest-on-each-version.yaml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/kennard-stone/badges/version.svg)](https://anaconda.org/conda-forge/kennard-stone)
 [![Anaconda-platform badge](https://anaconda.org/conda-forge/kennard-stone/badges/platforms.svg)](https://anaconda.org/conda-forge/kennard-stone)
@@ -133,6 +134,13 @@ If these arguments are included, they do not cause an error. They simply have no
 
 If you want to run the notebook in example directory, you will need to additionally download `pandas`, `matplotlib`, `seaborn`, `tqdm`, and `jupyter` other than the packages in requirements.txt.
 
+## Parallelization (since v2.1.0)
+
+This algorithm is very computationally intensive and takes a lot of computation time.
+To solve this problem, we have implemented parallelization and optimized the algorithm since v2.1.0.
+`n_jobs` can be specified for parallelization as in the scikit-learn-like api.
+
+
 ## LICENSE
 
 MIT Licence
@@ -141,13 +149,14 @@ Copyright (c) 2021 yu9824
 
 
 ## References
+
 ### Papers
 
-* R. W. Kennard & L. A. Stone (1969) Computer Aided Design of Experiments, Technometrics, 11:1, 137-148, DOI: [10.1080/00401706.1969.10490666](https://doi.org/10.1080/00401706.1969.10490666)
+- R. W. Kennard & L. A. Stone (1969) Computer Aided Design of Experiments, Technometrics, 11:1, 137-148, DOI: [10.1080/00401706.1969.10490666](https://doi.org/10.1080/00401706.1969.10490666)
 
 ### Sites
 
-* [https://datachemeng.com/trainingtestdivision/](https://datachemeng.com/trainingtestdivision/) (Japanese site)
+- [https://datachemeng.com/trainingtestdivision/](https://datachemeng.com/trainingtestdivision/) (Japanese site)
 
 
 ## Histories
@@ -161,3 +170,11 @@ Copyright (c) 2021 yu9824
 ### v2.0.1
 
 - Fix bug with Python3.7.
+
+### v2.1.0
+
+- Optimize algorithm
+- Deal with Large number of data.
+  - parallel calculation when calculating distance (Add `n_jobs` argument)
+  - recursion number settings
+- Add other than "euclidean" calculation methods (Add `metric` argument)
