@@ -2,7 +2,7 @@
 Copyright © 2021 yu9824
 """
 
-from typing import overload, Union, Optional
+from typing import overload, Union, Optional, Generator
 
 # deprecated in Python >= 3.9
 from typing import List, Set
@@ -29,20 +29,54 @@ from sklearn.utils import check_array
 
 class KFold(_BaseKFold):
     @overload
-    def __init__(self, n_splits: int = 5, n_jobs: Optional[int] = None):
+    def __init__(
+        self,
+        n_splits: int = 5,
+        *,
+        metric: str = "euclidean",
+        n_jobs: Optional[int] = None,
+    ) -> None:
         pass
 
     def __init__(
-        self, n_splits: int = 5, n_jobs: Optional[int] = None, **kwargs
-    ):
+        self,
+        n_splits: int = 5,
+        *,
+        metric: str = "euclidean",
+        n_jobs: Optional[int] = None,
+        **kwargs,
+    ) -> None:
         """K-Folds cross-validator using the Kennard-Stone algorithm.
 
         Parameters
         ----------
         n_splits : int, optional
             Number of folds. Must be at least 2., by default 5
+
+        metric : str, optional
+            The distance metric to use. See the documentation of
+            `sklearn.metrics.pairwise_distances` for valid values.
+            , by default "euclidean"
+
+            =============== ========================================
+            metric          Function
+            =============== ========================================
+            'cityblock'     metrics.pairwise.manhattan_distances
+            'cosine'        metrics.pairwise.cosine_distances
+            'euclidean'     metrics.pairwise.euclidean_distances
+            'haversine'     metrics.pairwise.haversine_distances
+            'l1'            metrics.pairwise.manhattan_distances
+            'l2'            metrics.pairwise.euclidean_distances
+            'manhattan'     metrics.pairwise.manhattan_distances
+            'nan_euclidean' metrics.pairwise.nan_euclidean_distances
+            =============== ========================================
+
+        n_jobs : int, optional
+            The number of parallel jobs., by default None
         """
         super().__init__(n_splits=n_splits, shuffle=False, random_state=None)
+        self.metric = metric
+        self.n_jobs = n_jobs
 
         if "shuffle" in kwargs:
             warnings.warn(
@@ -60,8 +94,15 @@ class KFold(_BaseKFold):
             )
         del self.random_state
 
-    def _iter_test_indices(self, X=None, y=None, groups=None):
-        ks = _KennardStone(n_groups=self.get_n_splits())
+    def _iter_test_indices(
+        self, X=None, y=None, groups=None
+    ) -> Generator[List[int], None, None]:
+        ks = _KennardStone(
+            n_groups=self.get_n_splits(),
+            scale=True,
+            metric=self.metric,
+            n_jobs=self.n_jobs,
+        )
         indexes = ks.get_indexes(X)
 
         for index in indexes:
@@ -75,11 +116,13 @@ class KSSplit(BaseShuffleSplit):
         *,
         test_size: Optional[Union[float, int]] = None,
         train_size: Optional[Union[float, int]] = None,
+        metric: str = "euclidean",
         n_jobs: Optional[int] = None,
     ):
         super().__init__(
             n_splits=n_splits, test_size=test_size, train_size=train_size
         )
+        self.metric = metric
         self.n_jobs = n_jobs
 
         assert self.get_n_splits() == 1, "n_splits must be 1"
@@ -87,7 +130,9 @@ class KSSplit(BaseShuffleSplit):
 
     # overwrap abstractmethod
     def _iter_indices(self, X, y=None, groups=None):
-        ks = _KennardStone(n_groups=1, n_jobs=self.n_jobs)
+        ks = _KennardStone(
+            n_groups=1, scale=True, metric=self.metric, n_jobs=self.n_jobs
+        )
         indexes = ks.get_indexes(X)[0]
 
         n_samples = _num_samples(X)
@@ -109,6 +154,7 @@ def train_test_split(
     *arrays,
     test_size: Optional[Union[float, int]] = None,
     train_size: Optional[Union[float, int]] = None,
+    metric: str = "euclidean",
     n_jobs: Optional[int] = None,
 ) -> list:
     pass
@@ -118,6 +164,7 @@ def train_test_split(
     *arrays,
     test_size: Optional[Union[float, int]] = None,
     train_size: Optional[Union[float, int]] = None,
+    metric: str = "euclidean",
     n_jobs: Optional[int] = None,
     **kwargs,
 ) -> list:
@@ -132,17 +179,40 @@ def train_test_split(
     *arrays: sequence of indexables with same length / shape[0]
         Allowed inputs are lists, numpy arrays, scipy-sparse
         matrices or pandas dataframes.
+
     test_size : float or int, optional
         If float, should be between 0.0 and 1.0 and represent the proportion
         of the dataset to include in the test split. If int, represents the
         absolute number of test samples. If None, the value is set to the
         complement of the train size. If train_size is also None, it will be
         set to 0.25., by default None
+
     train_size : float or int, optional
         If float, should be between 0.0 and 1.0 and represent the proportion
         of the dataset to include in the train split. If int, represents the
         absolute number of train samples. If None, the value is automatically
         set to the complement of the test size., by default None
+
+    metric : str, optional
+        The distance metric to use. See the documentation of
+        `sklearn.metrics.pairwise_distances` for valid values.
+        , by default "euclidean"
+
+        =============== ========================================
+        metric          Function
+        =============== ========================================
+        'cityblock'     metrics.pairwise.manhattan_distances
+        'cosine'        metrics.pairwise.cosine_distances
+        'euclidean'     metrics.pairwise.euclidean_distances
+        'haversine'     metrics.pairwise.haversine_distances
+        'l1'            metrics.pairwise.manhattan_distances
+        'l2'            metrics.pairwise.euclidean_distances
+        'manhattan'     metrics.pairwise.manhattan_distances
+        'nan_euclidean' metrics.pairwise.nan_euclidean_distances
+        =============== ========================================
+
+    n_jobs : int, optional
+        The number of parallel jobs., by default None
 
     Returns
     -------
@@ -179,7 +249,9 @@ def train_test_split(
     )
 
     CVClass = KSSplit
-    cv = CVClass(test_size=n_test, train_size=n_train, n_jobs=n_jobs)
+    cv = CVClass(
+        test_size=n_test, train_size=n_train, metric=metric, n_jobs=n_jobs
+    )
 
     train, test = next(cv.split(X=arrays[0]))
 
@@ -204,8 +276,30 @@ class _KennardStone:
         ----------
         n_groups : int, optional
             how many groups to divide, by default 1
+
         scale : bool, optional
             scaling X or not, by default True
+
+        metric : str, optional
+            The distance metric to use. See the documentation of
+            `sklearn.metrics.pairwise_distances` for valid values.
+            , by default "euclidean"
+
+            =============== ========================================
+            metric          Function
+            =============== ========================================
+            'cityblock'     metrics.pairwise.manhattan_distances
+            'cosine'        metrics.pairwise.cosine_distances
+            'euclidean'     metrics.pairwise.euclidean_distances
+            'haversine'     metrics.pairwise.haversine_distances
+            'l1'            metrics.pairwise.manhattan_distances
+            'l2'            metrics.pairwise.euclidean_distances
+            'manhattan'     metrics.pairwise.manhattan_distances
+            'nan_euclidean' metrics.pairwise.nan_euclidean_distances
+            =============== ========================================
+
+        n_jobs : int, optional
+            The number of parallel jobs., by default None
         """
         self.n_groups = n_groups
         self.scale = scale

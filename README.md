@@ -168,4 +168,4 @@ Copyright (c) 2021 yu9824
 - Deal with Large number of data.
   - parallel calculation when calculating distance
   - recursion number settings
-- Add other than "euclidean" calculation methods to options
+- Add other than "euclidean" calculation methods
