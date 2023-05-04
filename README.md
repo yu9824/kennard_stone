@@ -190,3 +190,7 @@ Copyright (c) 2021 yu9824
   - parallel calculation when calculating distance (Add `n_jobs` argument)
   - recursion number settings
 - Add other than "euclidean" calculation methods (Add `metric` argument)
+
+### v2.1.1
+
+- Fix bug when `metric="nan_euclidean"`.
