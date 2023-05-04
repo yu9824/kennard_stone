@@ -4,13 +4,13 @@ Copyright © 2021 yu9824
 
 from typing import overload, Union, Optional, Generator
 
-# deprecated in Python >= 3.9
+# The fllowing has deprecated in Python >= 3.9
 from typing import List, Set
+
 from itertools import chain
 import warnings
 
 import numpy as np
-
 from sklearn.model_selection._split import BaseShuffleSplit
 from sklearn.model_selection._split import _BaseKFold
 from sklearn.model_selection._split import _validate_shuffle_split
@@ -308,7 +308,14 @@ class _KennardStone:
 
     def get_indexes(self, X) -> List[List[int]]:
         # check input array
-        X: np.ndarray = check_array(X, ensure_2d=True, dtype="numeric")
+        X: np.ndarray = check_array(
+            X,
+            ensure_2d=True,
+            dtype="numeric",
+            force_all_finite="allow-nan"
+            if self.metric == "nan_euclidean"
+            else True,
+        )
         n_samples = X.shape[0]
 
         # drop no variance
