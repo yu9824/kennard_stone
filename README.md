@@ -119,7 +119,9 @@ from sklearn.model_selection import cross_validate
 kf = KFold(n_splits=5, shuffle=True, random_state=334)
 print(cross_validate(estimator, X, y, cv=kf))
 ```
+
 OR
+
 ```python
 from sklearn.model_selection import cross_validate
 
@@ -136,9 +138,19 @@ If you want to run the notebook in example directory, you will need to additiona
 
 ## Parallelization (since v2.1.0)
 
-This algorithm is very computationally intensive and takes a lot of computation time.
-To solve this problem, we have implemented parallelization and optimized the algorithm since v2.1.0.
+This algorithm is very computationally intensive and takes a lot of time.
+To solve this problem, I have implemented parallelization and optimized the algorithm since v2.1.0.
 `n_jobs` can be specified for parallelization as in the scikit-learn-like api.
+
+```python
+# parallelization KFold
+kf = KFold(n_splits=5, n_jobs=-1)
+
+# parallelization train_test_split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, n_jobs=-1
+)
+```
 
 
 ## LICENSE
