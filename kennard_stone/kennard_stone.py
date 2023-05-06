@@ -44,7 +44,8 @@ class KFold(_BaseKFold):
         *,
         metric: str = "euclidean",
         n_jobs: Optional[int] = None,
-        **kwargs,
+        random_state: None = None,
+        shuffle: None = None,
     ) -> None:
         """K-Folds cross-validator using the Kennard-Stone algorithm.
 
@@ -78,7 +79,7 @@ class KFold(_BaseKFold):
         self.metric = metric
         self.n_jobs = n_jobs
 
-        if "shuffle" in kwargs:
+        if shuffle is not None:
             warnings.warn(
                 "`shuffle` is unnecessary because it is always shuffled"
                 " in this algorithm.",
@@ -86,7 +87,7 @@ class KFold(_BaseKFold):
             )
         del self.shuffle
 
-        if "random_state" in kwargs:
+        if random_state is not None:
             warnings.warn(
                 "`random_state` is unnecessary since it is uniquely determined"
                 " in this algorithm.",
@@ -166,7 +167,8 @@ def train_test_split(
     train_size: Optional[Union[float, int]] = None,
     metric: str = "euclidean",
     n_jobs: Optional[int] = None,
-    **kwargs,
+    random_state: None = None,
+    shuffle: None = None,
 ) -> list:
     """Split arrays or matrices into train and test subsets using the
     Kennard-Stone algorithm.
@@ -223,14 +225,14 @@ def train_test_split(
     ------
     ValueError
     """
-    if "shuffle" in kwargs:
+    if shuffle is not None:
         warnings.warn(
             "`shuffle` is unnecessary because it is always shuffled"
             " in this algorithm.",
             UserWarning,
         )
 
-    if "random_state" in kwargs:
+    if random_state is not None:
         warnings.warn(
             "`random_state` is unnecessary since it is uniquely determined"
             " in this algorithm.",
