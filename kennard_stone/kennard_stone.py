@@ -4,13 +4,13 @@ Copyright © 2021 yu9824
 
 from typing import overload, Union, Optional, Generator
 
-# deprecated in Python >= 3.9
+# The fllowing has deprecated in Python >= 3.9
 from typing import List, Set
+
 from itertools import chain
 import warnings
 
 import numpy as np
-
 from sklearn.model_selection._split import BaseShuffleSplit
 from sklearn.model_selection._split import _BaseKFold
 from sklearn.model_selection._split import _validate_shuffle_split
@@ -44,7 +44,8 @@ class KFold(_BaseKFold):
         *,
         metric: str = "euclidean",
         n_jobs: Optional[int] = None,
-        **kwargs,
+        random_state: None = None,
+        shuffle: None = None,
     ) -> None:
         """K-Folds cross-validator using the Kennard-Stone algorithm.
 
@@ -78,7 +79,7 @@ class KFold(_BaseKFold):
         self.metric = metric
         self.n_jobs = n_jobs
 
-        if "shuffle" in kwargs:
+        if shuffle is not None:
             warnings.warn(
                 "`shuffle` is unnecessary because it is always shuffled"
                 " in this algorithm.",
@@ -86,7 +87,7 @@ class KFold(_BaseKFold):
             )
         del self.shuffle
 
-        if "random_state" in kwargs:
+        if random_state is not None:
             warnings.warn(
                 "`random_state` is unnecessary since it is uniquely determined"
                 " in this algorithm.",
@@ -166,7 +167,8 @@ def train_test_split(
     train_size: Optional[Union[float, int]] = None,
     metric: str = "euclidean",
     n_jobs: Optional[int] = None,
-    **kwargs,
+    random_state: None = None,
+    shuffle: None = None,
 ) -> list:
     """Split arrays or matrices into train and test subsets using the
     Kennard-Stone algorithm.
@@ -223,14 +225,14 @@ def train_test_split(
     ------
     ValueError
     """
-    if "shuffle" in kwargs:
+    if shuffle is not None:
         warnings.warn(
             "`shuffle` is unnecessary because it is always shuffled"
             " in this algorithm.",
             UserWarning,
         )
 
-    if "random_state" in kwargs:
+    if random_state is not None:
         warnings.warn(
             "`random_state` is unnecessary since it is uniquely determined"
             " in this algorithm.",
@@ -308,7 +310,14 @@ class _KennardStone:
 
     def get_indexes(self, X) -> List[List[int]]:
         # check input array
-        X: np.ndarray = check_array(X, ensure_2d=True, dtype="numeric")
+        X: np.ndarray = check_array(
+            X,
+            ensure_2d=True,
+            dtype="numeric",
+            force_all_finite="allow-nan"
+            if self.metric == "nan_euclidean"
+            else True,
+        )
         n_samples = X.shape[0]
 
         # drop no variance
@@ -342,8 +351,6 @@ class _KennardStone:
         ].tolist()
 
         distance_min = self.distance_matrix[idx_farthest, :]
-
-        # recursion limit settings
 
         # params
         indexes_selected = idx_farthest
