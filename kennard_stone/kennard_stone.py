@@ -350,8 +350,6 @@ class _KennardStone:
 
         distance_min = self.distance_matrix[idx_farthest, :]
 
-        # recursion limit settings
-
         # params
         indexes_selected = idx_farthest
         lst_indexes_selected_prev = [[] for _ in range(self.n_groups)]

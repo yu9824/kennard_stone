@@ -188,7 +188,7 @@ Copyright (c) 2021 yu9824
 - Optimize algorithm
 - Deal with Large number of data.
   - parallel calculation when calculating distance (Add `n_jobs` argument)
-  - recursion number settings
+  - replacing recursive functions with for-loops
 - Add other than "euclidean" calculation methods (Add `metric` argument)
 
 ### v2.1.1
