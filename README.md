@@ -12,7 +12,8 @@
 
 ## What is this?
 
-This is an algorithm for evenly partitioning data in a `scikit-learn`-like interface. (See [References](#References) for details of the algorithm.)
+This is an algorithm for evenly partitioning data in a `scikit-learn`-like interface.
+(See [References](#References) for details of the algorithm.)
 
 ![simulateion_gif](https://github.com/yu9824/kennard_stone/blob/main/example/simulate.gif?raw=true "Simulateion")
 
@@ -134,7 +135,8 @@ print(cross_validate(estimator, X, y, cv=5))
 There is no notion of `random_state` or `shuffle` because the partitioning is determined uniquely for the dataset.
 If these arguments are included, they do not cause an error. They simply have no effect on the result. Please be careful.
 
-If you want to run the notebook in example directory, you will need to additionally download `pandas`, `matplotlib`, `seaborn`, `tqdm`, and `jupyter` other than the packages in requirements.txt.
+If you want to run the notebook in example directory,
+you will need to additionally install `pandas`, `matplotlib`, `seaborn`, `tqdm`, and `jupyter` other than the packages in requirements.txt.
 
 ## Distance metrics
 
@@ -218,3 +220,8 @@ Copyright (c) 2021 yu9824
 ### v2.1.1
 
 - Fix bug when `metric="nan_euclidean"`.
+
+### v2.1.2
+
+- Fix details.
+  - Update docstrings and typings.

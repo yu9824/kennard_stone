@@ -11,6 +11,7 @@ from itertools import chain
 import warnings
 
 import numpy as np
+from numpy.typing import ArrayLike
 from sklearn.model_selection._split import BaseShuffleSplit
 from sklearn.model_selection._split import _BaseKFold
 from sklearn.model_selection._split import _validate_shuffle_split
@@ -294,7 +295,8 @@ class _KennardStone:
         metric: Union[str, Callable] = "euclidean",
         n_jobs: Optional[int] = None,
     ) -> None:
-        """The root program of the Kennard-Stone algorithm.
+        """The root program of the Kennard-Stone algorithm,
+        an algorithm for evenly partitioning data.
 
         Parameters
         ----------
@@ -343,7 +345,19 @@ class _KennardStone:
         self.metric = metric
         self.n_jobs = n_jobs
 
-    def get_indexes(self, X) -> List[List[int]]:
+    def get_indexes(self, X: ArrayLike) -> List[List[int]]:
+        """Sort indexes by the Kennard-Stone algorithm.
+
+        Parameters
+        ----------
+        X : ArrayLike
+            _description_
+
+        Returns
+        -------
+        List[List[int]]
+            _description_
+        """
         # check input array
         X: np.ndarray = check_array(
             X,
