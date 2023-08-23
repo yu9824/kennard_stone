@@ -2,7 +2,7 @@
 Copyright © 2021 yu9824
 """
 
-from typing import overload, Union, Optional, Generator
+from typing import overload, Union, Optional, Generator, Callable
 
 # The fllowing has deprecated in Python >= 3.9
 from typing import List, Set
@@ -23,17 +23,13 @@ from sklearn.metrics.pairwise import pairwise_distances
 from sklearn.utils import check_array
 
 
-# TODO: sphinx documentation？
-# TODO: parallelization
-
-
 class KFold(_BaseKFold):
     @overload
     def __init__(
         self,
         n_splits: int = 5,
         *,
-        metric: str = "euclidean",
+        metric: Union[str, Callable] = "euclidean",
         n_jobs: Optional[int] = None,
     ) -> None:
         pass
@@ -42,7 +38,7 @@ class KFold(_BaseKFold):
         self,
         n_splits: int = 5,
         *,
-        metric: str = "euclidean",
+        metric: Union[str, Callable] = "euclidean",
         n_jobs: Optional[int] = None,
         random_state: None = None,
         shuffle: None = None,
@@ -54,26 +50,39 @@ class KFold(_BaseKFold):
         n_splits : int, optional
             Number of folds. Must be at least 2., by default 5
 
-        metric : str, optional
+        metric : Union[str, Callable], optional
             The distance metric to use. See the documentation of
-            `sklearn.metrics.pairwise_distances` for valid values.
+            - `scipy.spatial.distance.pdist`
+                https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html
+            - `sklearn.metrics.pairwise_distances`
+                https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html
+
+            for valid values.
             , by default "euclidean"
 
-            =============== ========================================
-            metric          Function
-            =============== ========================================
-            'cityblock'     metrics.pairwise.manhattan_distances
-            'cosine'        metrics.pairwise.cosine_distances
-            'euclidean'     metrics.pairwise.euclidean_distances
-            'haversine'     metrics.pairwise.haversine_distances
-            'l1'            metrics.pairwise.manhattan_distances
-            'l2'            metrics.pairwise.euclidean_distances
-            'manhattan'     metrics.pairwise.manhattan_distances
-            'nan_euclidean' metrics.pairwise.nan_euclidean_distances
-            =============== ========================================
+            Valid values for metric are:
+
+            - From scikit-learn: ['cityblock', 'cosine', 'euclidean', 'l1',
+                'l2', 'manhattan']. These metrics support sparse matrix inputs.
+                ['nan_euclidean'] but it does not yet support sparse matrices.
+            - From scipy.spatial.distance: ['braycurtis', 'canberra',
+                'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
+                'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto',
+                'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
+                'sqeuclidean', 'yule'] See the documentation for
+                scipy.spatial.distance for details on these metrics.
+                These metrics do not support sparse matrix inputs.
 
         n_jobs : int, optional
             The number of parallel jobs., by default None
+
+        random_state : None, deprecated
+            This parameter is deprecated and has no effect
+            because the algorithm is deterministic.
+
+        shuffle : None, deprecated
+            This parameter is deprecated and has no effect
+            because the algorithm is deterministic.
         """
         super().__init__(n_splits=n_splits, shuffle=False, random_state=None)
         self.metric = metric
@@ -146,7 +155,7 @@ class KSSplit(BaseShuffleSplit):
 
         for _ in range(self.get_n_splits()):
             ind_test = indexes[:n_test]
-            ind_train = indexes[n_test : (n_test + n_train)]
+            ind_train = indexes[n_test : (n_test + n_train)]    # noqa: E203
             yield ind_train, ind_test
 
 
@@ -155,7 +164,7 @@ def train_test_split(
     *arrays,
     test_size: Optional[Union[float, int]] = None,
     train_size: Optional[Union[float, int]] = None,
-    metric: str = "euclidean",
+    metric: Union[str, Callable] = "euclidean",
     n_jobs: Optional[int] = None,
 ) -> list:
     pass
@@ -165,7 +174,7 @@ def train_test_split(
     *arrays,
     test_size: Optional[Union[float, int]] = None,
     train_size: Optional[Union[float, int]] = None,
-    metric: str = "euclidean",
+    metric: Union[str, Callable] = "euclidean",
     n_jobs: Optional[int] = None,
     random_state: None = None,
     shuffle: None = None,
@@ -174,7 +183,7 @@ def train_test_split(
     Kennard-Stone algorithm.
 
     Data partitioning by the Kennard-Stone algorithm is performed based on the
-     first element to be input.
+    first element to be input.
 
     Parameters
     ----------
@@ -195,26 +204,39 @@ def train_test_split(
         absolute number of train samples. If None, the value is automatically
         set to the complement of the test size., by default None
 
-    metric : str, optional
+    metric : Union[str, Callable], optional
         The distance metric to use. See the documentation of
-        `sklearn.metrics.pairwise_distances` for valid values.
+        - `scipy.spatial.distance.pdist`
+            https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html
+        - `sklearn.metrics.pairwise_distances`
+            https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html
+
+        for valid values.
         , by default "euclidean"
 
-        =============== ========================================
-        metric          Function
-        =============== ========================================
-        'cityblock'     metrics.pairwise.manhattan_distances
-        'cosine'        metrics.pairwise.cosine_distances
-        'euclidean'     metrics.pairwise.euclidean_distances
-        'haversine'     metrics.pairwise.haversine_distances
-        'l1'            metrics.pairwise.manhattan_distances
-        'l2'            metrics.pairwise.euclidean_distances
-        'manhattan'     metrics.pairwise.manhattan_distances
-        'nan_euclidean' metrics.pairwise.nan_euclidean_distances
-        =============== ========================================
+        Valid values for metric are:
+
+        - From scikit-learn: ['cityblock', 'cosine', 'euclidean', 'l1',
+            'l2', 'manhattan']. These metrics support sparse matrix inputs.
+            ['nan_euclidean'] but it does not yet support sparse matrices.
+        - From scipy.spatial.distance: ['braycurtis', 'canberra',
+            'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
+            'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto',
+            'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
+            'sqeuclidean', 'yule'] See the documentation for
+            scipy.spatial.distance for details on these metrics.
+            These metrics do not support sparse matrix inputs.
 
     n_jobs : int, optional
         The number of parallel jobs., by default None
+
+    random_state : None, deprecated
+        This parameter is deprecated and has no effect
+        because the algorithm is deterministic.
+
+    shuffle : None, deprecated
+        This parameter is deprecated and has no effect
+        because the algorithm is deterministic.
 
     Returns
     -------
@@ -269,7 +291,7 @@ class _KennardStone:
         self,
         n_groups: int = 1,
         scale: bool = True,
-        metric: str = "euclidean",
+        metric: Union[str, Callable] = "euclidean",
         n_jobs: Optional[int] = None,
     ) -> None:
         """The root program of the Kennard-Stone algorithm.
@@ -282,26 +304,39 @@ class _KennardStone:
         scale : bool, optional
             scaling X or not, by default True
 
-        metric : str, optional
+        metric : Union[str, Callable], optional
             The distance metric to use. See the documentation of
-            `sklearn.metrics.pairwise_distances` for valid values.
+            - `scipy.spatial.distance.pdist`
+                https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html
+            - `sklearn.metrics.pairwise_distances`
+                https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html
+
+            for valid values.
             , by default "euclidean"
 
-            =============== ========================================
-            metric          Function
-            =============== ========================================
-            'cityblock'     metrics.pairwise.manhattan_distances
-            'cosine'        metrics.pairwise.cosine_distances
-            'euclidean'     metrics.pairwise.euclidean_distances
-            'haversine'     metrics.pairwise.haversine_distances
-            'l1'            metrics.pairwise.manhattan_distances
-            'l2'            metrics.pairwise.euclidean_distances
-            'manhattan'     metrics.pairwise.manhattan_distances
-            'nan_euclidean' metrics.pairwise.nan_euclidean_distances
-            =============== ========================================
+            Valid values for metric are:
+
+            - From scikit-learn: ['cityblock', 'cosine', 'euclidean', 'l1',
+                'l2', 'manhattan']. These metrics support sparse matrix inputs.
+                ['nan_euclidean'] but it does not yet support sparse matrices.
+            - From scipy.spatial.distance: ['braycurtis', 'canberra',
+                'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
+                'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto',
+                'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
+                'sqeuclidean', 'yule'] See the documentation for
+                scipy.spatial.distance for details on these metrics.
+                These metrics do not support sparse matrix inputs.
 
         n_jobs : int, optional
             The number of parallel jobs., by default None
+
+        random_state : None, deprecated
+            This parameter is deprecated and has no effect
+            because the algorithm is deterministic.
+
+        shuffle : None, deprecated
+            This parameter is deprecated and has no effect
+            because the algorithm is deterministic.
         """
         self.n_groups = n_groups
         self.scale = scale
@@ -441,27 +476,4 @@ class _KennardStone:
 
 
 if __name__ == "__main__":
-    from sklearn.model_selection import cross_validate
-    from sklearn.datasets import load_diabetes, fetch_california_housing
-    from sklearn.ensemble import RandomForestRegressor
-    from sklearn.metrics import mean_squared_error
-
-    data = fetch_california_housing(as_frame=True)
-    # data = load_diabetes(as_frame=True)
-    X = data.data
-    y = data.target
-
-    # ks = _KennardStone(n_groups=2, scale=True, n_jobs=-1)
-    # ks = _KennardStone(n_groups=1, scale=True, n_jobs=-1)
-    # ks.get_indexes(X)
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, n_jobs=-1
-    )
-    rf = RandomForestRegressor(n_jobs=-1, random_state=334)
-    rf.fit(X_train, y_train)
-    y_pred_on_test = rf.predict(X_test)
-    print(mean_squared_error(y_test, y_pred_on_test, squared=False))
-
-    # kf = KFold(n_splits=5, n_jobs=-1)
-    # print(cross_validate(rf, X, y, scoring="neg_mean_squared_error", cv=kf))
+    pass
