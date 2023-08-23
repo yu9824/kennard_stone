@@ -136,6 +136,30 @@ If these arguments are included, they do not cause an error. They simply have no
 
 If you want to run the notebook in example directory, you will need to additionally download `pandas`, `matplotlib`, `seaborn`, `tqdm`, and `jupyter` other than the packages in requirements.txt.
 
+## Distance metrics
+
+See the documentation of
+
+- `scipy.spatial.distance.pdist`
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html
+- `sklearn.metrics.pairwise_distances`
+    https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html
+
+Valid values for metric are:
+
+- From scikit-learn: ['cityblock', 'cosine', 'euclidean', 'l1',
+    'l2', 'manhattan']. These metrics support sparse matrix inputs.
+    ['nan_euclidean'] but it does not yet support sparse matrices.
+- From scipy.spatial.distance: ['braycurtis', 'canberra',
+    'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
+    'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto',
+    'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
+    'sqeuclidean', 'yule'] See the documentation for
+    scipy.spatial.distance for details on these metrics.
+    These metrics do not support sparse matrix inputs.
+
+, by default "euclidean"
+
 ## Parallelization (since v2.1.0)
 
 This algorithm is very computationally intensive and takes a lot of time.
