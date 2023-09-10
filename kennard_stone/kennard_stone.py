@@ -7,6 +7,8 @@ from typing import overload, Union, Optional, Generator, Callable
 # The fllowing has deprecated in Python >= 3.9
 from typing import List, Set
 
+import sys
+import pkgutil
 from itertools import chain
 import warnings
 
@@ -24,22 +26,68 @@ from sklearn.metrics.pairwise import pairwise_distances
 from sklearn.utils import check_array
 
 
+class IgnoredArgumentWarning(Warning):
+    """Warning used to ignore an argument."""
+    pass
+
+
+if sys.version_info >= (3, 8) or (
+    "typing_extensions" in {_module.name for _module in pkgutil.iter_modules()}
+):
+    if sys.version_info >= (3, 8):
+        from typing import Literal
+    else:
+        from typing_extensions import Literal
+
+    METRCIS = Literal[
+        "cityblock",
+        "cosine",
+        "euclidean",
+        "l1",
+        "l2",
+        "manhattan",
+        "braycurtis",
+        "canberra",
+        "chebyshev",
+        "correlation",
+        "dice",
+        "hamming",
+        "jaccard",
+        "kulsinski",
+        "mahalanobis",
+        "minkowski",
+        "rogerstanimoto",
+        "russellrao",
+        "seuclidean",
+        "sokalmichener",
+        "sokalsneath",
+        "sqeuclidean",
+        "yule",
+    ]
+else:
+    METRICS = str
+
+
 class KFold(_BaseKFold):
     @overload
     def __init__(
         self,
         n_splits: int = 5,
         *,
-        metric: Union[str, Callable] = "euclidean",
+        metric: Union[
+            METRCIS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+        ] = "euclidean",
         n_jobs: Optional[int] = None,
     ) -> None:
-        pass
+        ...
 
     def __init__(
         self,
         n_splits: int = 5,
         *,
-        metric: Union[str, Callable] = "euclidean",
+        metric: Union[
+            METRCIS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+        ] = "euclidean",
         n_jobs: Optional[int] = None,
         random_state: None = None,
         shuffle: None = None,
@@ -51,7 +99,9 @@ class KFold(_BaseKFold):
         n_splits : int, optional
             Number of folds. Must be at least 2., by default 5
 
-        metric : Union[str, Callable], optional
+        metric : Union[METRCIS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+            , optional
+
             The distance metric to use. See the documentation of
             - `scipy.spatial.distance.pdist`
                 https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html
@@ -93,7 +143,7 @@ class KFold(_BaseKFold):
             warnings.warn(
                 "`shuffle` is unnecessary because it is always shuffled"
                 " in this algorithm.",
-                UserWarning,
+                IgnoredArgumentWarning,
             )
         del self.shuffle
 
@@ -101,7 +151,7 @@ class KFold(_BaseKFold):
             warnings.warn(
                 "`random_state` is unnecessary since it is uniquely determined"
                 " in this algorithm.",
-                UserWarning,
+                IgnoredArgumentWarning,
             )
         del self.random_state
 
@@ -127,7 +177,9 @@ class KSSplit(BaseShuffleSplit):
         *,
         test_size: Optional[Union[float, int]] = None,
         train_size: Optional[Union[float, int]] = None,
-        metric: str = "euclidean",
+        metric: Union[
+            METRCIS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+        ] = "euclidean",
         n_jobs: Optional[int] = None,
     ):
         super().__init__(
@@ -156,7 +208,7 @@ class KSSplit(BaseShuffleSplit):
 
         for _ in range(self.get_n_splits()):
             ind_test = indexes[:n_test]
-            ind_train = indexes[n_test : (n_test + n_train)]    # noqa: E203
+            ind_train = indexes[n_test : (n_test + n_train)]  # noqa: E203
             yield ind_train, ind_test
 
 
@@ -165,7 +217,9 @@ def train_test_split(
     *arrays,
     test_size: Optional[Union[float, int]] = None,
     train_size: Optional[Union[float, int]] = None,
-    metric: Union[str, Callable] = "euclidean",
+    metric: Union[
+        METRCIS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+    ] = "euclidean",
     n_jobs: Optional[int] = None,
 ) -> list:
     pass
@@ -175,7 +229,9 @@ def train_test_split(
     *arrays,
     test_size: Optional[Union[float, int]] = None,
     train_size: Optional[Union[float, int]] = None,
-    metric: Union[str, Callable] = "euclidean",
+    metric: Union[
+        METRCIS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+    ] = "euclidean",
     n_jobs: Optional[int] = None,
     random_state: None = None,
     shuffle: None = None,
@@ -205,7 +261,9 @@ def train_test_split(
         absolute number of train samples. If None, the value is automatically
         set to the complement of the test size., by default None
 
-    metric : Union[str, Callable], optional
+    metric : Union[METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]]
+        , optional
+
         The distance metric to use. See the documentation of
         - `scipy.spatial.distance.pdist`
             https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html
@@ -252,14 +310,14 @@ def train_test_split(
         warnings.warn(
             "`shuffle` is unnecessary because it is always shuffled"
             " in this algorithm.",
-            UserWarning,
+            IgnoredArgumentWarning,
         )
 
     if random_state is not None:
         warnings.warn(
             "`random_state` is unnecessary since it is uniquely determined"
             " in this algorithm.",
-            UserWarning,
+            IgnoredArgumentWarning,
         )
 
     n_arrays = len(arrays)
@@ -292,7 +350,9 @@ class _KennardStone:
         self,
         n_groups: int = 1,
         scale: bool = True,
-        metric: Union[str, Callable] = "euclidean",
+        metric: Union[
+            METRCIS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+        ] = "euclidean",
         n_jobs: Optional[int] = None,
     ) -> None:
         """The root program of the Kennard-Stone algorithm,
@@ -306,7 +366,9 @@ class _KennardStone:
         scale : bool, optional
             scaling X or not, by default True
 
-        metric : Union[str, Callable], optional
+        metric : Union[METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]]
+            , optional
+
             The distance metric to use. See the documentation of
             - `scipy.spatial.distance.pdist`
                 https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html
@@ -331,14 +393,6 @@ class _KennardStone:
 
         n_jobs : int, optional
             The number of parallel jobs., by default None
-
-        random_state : None, deprecated
-            This parameter is deprecated and has no effect
-            because the algorithm is deterministic.
-
-        shuffle : None, deprecated
-            This parameter is deprecated and has no effect
-            because the algorithm is deterministic.
         """
         self.n_groups = n_groups
         self.scale = scale
