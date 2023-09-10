@@ -230,3 +230,9 @@ Copyright (c) 2021 yu9824
 
 - Fix details.
   - Update some typings. (You have access to a list of strings that can be used in the metric.)
+
+### v2.1.4
+
+- Fix bug when metric=="seuclidean" and "mahalanobis"
+  - Add some tests to check all metrics.
+- Add requirements numpy>=1.20
