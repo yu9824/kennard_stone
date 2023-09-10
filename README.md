@@ -225,3 +225,8 @@ Copyright (c) 2021 yu9824
 
 - Fix details.
   - Update docstrings and typings.
+
+### v2.1.3
+
+- Fix details.
+  - Update some typings. (You have access to a list of strings that can be used in the metric.)
