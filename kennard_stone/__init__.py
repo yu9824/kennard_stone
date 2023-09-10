@@ -1,6 +1,6 @@
 from .kennard_stone import KFold, train_test_split
 
-__version__ = "2.1.3"
+__version__ = "2.1.4"
 __license__ = "MIT"
 __author__ = "yu9824"
 __copyright__ = "Copyright © 2021 yu9824"
