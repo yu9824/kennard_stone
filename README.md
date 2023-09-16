@@ -236,3 +236,7 @@ Copyright (c) 2021 yu9824
 - Fix bug when metric=="seuclidean" and "mahalanobis"
   - Add some tests to check all metrics.
 - Add requirements numpy>=1.20
+
+### v2.1.5
+
+- Delete "klusinski" metric to support scipy>=1.11
