@@ -54,7 +54,6 @@ if sys.version_info >= (3, 8) or (
         "dice",
         "hamming",
         "jaccard",
-        "kulsinski",
         "mahalanobis",
         "minkowski",
         "rogerstanimoto",
@@ -119,7 +118,7 @@ class KFold(_BaseKFold):
                 ['nan_euclidean'] but it does not yet support sparse matrices.
             - From scipy.spatial.distance: ['braycurtis', 'canberra',
                 'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
-                'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto',
+                'mahalanobis', 'minkowski', 'rogerstanimoto',
                 'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
                 'sqeuclidean', 'yule'] See the documentation for
                 scipy.spatial.distance for details on these metrics.
@@ -281,7 +280,7 @@ def train_test_split(
             ['nan_euclidean'] but it does not yet support sparse matrices.
         - From scipy.spatial.distance: ['braycurtis', 'canberra',
             'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
-            'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto',
+            'mahalanobis', 'minkowski', 'rogerstanimoto',
             'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
             'sqeuclidean', 'yule'] See the documentation for
             scipy.spatial.distance for details on these metrics.
@@ -386,7 +385,7 @@ class _KennardStone:
                 ['nan_euclidean'] but it does not yet support sparse matrices.
             - From scipy.spatial.distance: ['braycurtis', 'canberra',
                 'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
-                'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto',
+                'mahalanobis', 'minkowski', 'rogerstanimoto',
                 'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
                 'sqeuclidean', 'yule'] See the documentation for
                 scipy.spatial.distance for details on these metrics.

@@ -29,7 +29,6 @@ def test_train_test_split(prepare_data):
         "dice",
         "hamming",
         "jaccard",
-        "kulsinski",
         "mahalanobis",
         "minkowski",
         "rogerstanimoto",
