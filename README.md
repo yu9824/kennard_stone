@@ -154,7 +154,7 @@ Valid values for metric are:
     ['nan_euclidean'] but it does not yet support sparse matrices.
 - From scipy.spatial.distance: ['braycurtis', 'canberra',
     'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
-    'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto',
+    'mahalanobis', 'minkowski', 'rogerstanimoto',
     'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
     'sqeuclidean', 'yule'] See the documentation for
     scipy.spatial.distance for details on these metrics.
@@ -230,3 +230,13 @@ Copyright (c) 2021 yu9824
 
 - Fix details.
   - Update some typings. (You have access to a list of strings that can be used in the metric.)
+
+### v2.1.4
+
+- Fix bug when metric=="seuclidean" and "mahalanobis"
+  - Add some tests to check all metrics.
+- Add requirements numpy>=1.20
+
+### v2.1.5
+
+- Delete "klusinski" metric to support scipy>=1.11

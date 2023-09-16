@@ -28,6 +28,7 @@ from sklearn.utils import check_array
 
 class IgnoredArgumentWarning(Warning):
     """Warning used to ignore an argument."""
+
     pass
 
 
@@ -53,7 +54,6 @@ if sys.version_info >= (3, 8) or (
         "dice",
         "hamming",
         "jaccard",
-        "kulsinski",
         "mahalanobis",
         "minkowski",
         "rogerstanimoto",
@@ -118,7 +118,7 @@ class KFold(_BaseKFold):
                 ['nan_euclidean'] but it does not yet support sparse matrices.
             - From scipy.spatial.distance: ['braycurtis', 'canberra',
                 'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
-                'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto',
+                'mahalanobis', 'minkowski', 'rogerstanimoto',
                 'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
                 'sqeuclidean', 'yule'] See the documentation for
                 scipy.spatial.distance for details on these metrics.
@@ -280,7 +280,7 @@ def train_test_split(
             ['nan_euclidean'] but it does not yet support sparse matrices.
         - From scipy.spatial.distance: ['braycurtis', 'canberra',
             'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
-            'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto',
+            'mahalanobis', 'minkowski', 'rogerstanimoto',
             'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
             'sqeuclidean', 'yule'] See the documentation for
             scipy.spatial.distance for details on these metrics.
@@ -385,7 +385,7 @@ class _KennardStone:
                 ['nan_euclidean'] but it does not yet support sparse matrices.
             - From scipy.spatial.distance: ['braycurtis', 'canberra',
                 'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
-                'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto',
+                'mahalanobis', 'minkowski', 'rogerstanimoto',
                 'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
                 'sqeuclidean', 'yule'] See the documentation for
                 scipy.spatial.distance for details on these metrics.
@@ -441,12 +441,21 @@ class _KennardStone:
 
         # 全ての組成に対してそれぞれの平均との距離の二乗を配列として得る． (サンプル数の分だけ存在)
         # distance_to_ave = np.sum(np.square(X - X.mean(axis=0)), axis=1)
+        kwargs_pairwise_distances = dict()
+        if self.metric == "mahalanobis":
+            kwargs_pairwise_distances["VI"] = np.linalg.inv(
+                np.cov(X, rowvar=False)
+            )
+        elif self.metric == "seuclidean":
+            kwargs_pairwise_distances["V"] = np.var(X, axis=0, ddof=1)
+
         distance_to_ave = pairwise_distances(
             X,
             X.mean(axis=0, keepdims=True),
             metric=self.metric,
             n_jobs=self.n_jobs,
-        ).flatten()
+            **kwargs_pairwise_distances,
+        ).ravel()
 
         # 最大値を取るサンプル (平均からの距離が一番遠い) のindex_numberを保存
         idx_farthest: List[int] = np.argsort(distance_to_ave)[::-1][
