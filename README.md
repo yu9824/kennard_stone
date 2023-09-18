@@ -35,7 +35,7 @@ conda install -c conda-forge kennard-stone
 
 The project site is [here](https://anaconda.org/conda-forge/kennard-stone).
 
-You need `numpy` and `scikit-learn` to run.
+You need `numpy>=1.20` and `scikit-learn` to run.
 
 ## How to use
 
@@ -178,6 +178,13 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 ```
 
+The parallelization is used when calculating the distance matrix,
+so it doesn't conflict with something like `cross_validate`  in parallel when using `KFold`.
+
+```python
+# OK: does not conflict each other
+cross_validate(estimator, X, y, cv=KFold(5, n_jobs=-1), n_jobs=-1)
+```
 
 ## LICENSE
 
@@ -240,3 +247,7 @@ Copyright (c) 2021 yu9824
 ### v2.1.5
 
 - Delete "klusinski" metric to support scipy>=1.11
+
+### v2.1.6
+
+- Improve typing in `kennard_stone.train_test_split`
