@@ -2,7 +2,7 @@
 Copyright © 2021 yu9824
 """
 
-from typing import overload, Union, Optional, Generator, Callable
+from typing import overload, Union, Optional, Generator, Callable, TypeVar
 
 # The fllowing has deprecated in Python >= 3.9
 from typing import List, Set
@@ -24,6 +24,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.metrics.pairwise import pairwise_distances
 from sklearn.utils import check_array
+
+# for typing
+T = TypeVar("T")
 
 
 class IgnoredArgumentWarning(Warning):
@@ -214,19 +217,19 @@ class KSSplit(BaseShuffleSplit):
 
 @overload
 def train_test_split(
-    *arrays,
+    *arrays: T,
     test_size: Optional[Union[float, int]] = None,
     train_size: Optional[Union[float, int]] = None,
     metric: Union[
         METRCIS, Callable[[ArrayLike, ArrayLike], np.ndarray]
     ] = "euclidean",
     n_jobs: Optional[int] = None,
-) -> list:
+) -> List[T]:
     pass
 
 
 def train_test_split(
-    *arrays,
+    *arrays: T,
     test_size: Optional[Union[float, int]] = None,
     train_size: Optional[Union[float, int]] = None,
     metric: Union[
@@ -235,7 +238,7 @@ def train_test_split(
     n_jobs: Optional[int] = None,
     random_state: None = None,
     shuffle: None = None,
-) -> list:
+) -> List[T]:
     """Split arrays or matrices into train and test subsets using the
     Kennard-Stone algorithm.
 
