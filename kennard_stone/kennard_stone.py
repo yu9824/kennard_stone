@@ -2,10 +2,10 @@
 Copyright © 2021 yu9824
 """
 
-from typing import overload, Union, Optional, Generator, Callable, TypeVar
+from typing import overload, Union, Optional, TypeVar
 
 # The fllowing has deprecated in Python >= 3.9
-from typing import List, Set
+from typing import List, Set, Generator, Callable
 
 import sys
 import pkgutil
@@ -225,7 +225,7 @@ def train_test_split(
     ] = "euclidean",
     n_jobs: Optional[int] = None,
 ) -> List[T]:
-    pass
+    ...
 
 
 def train_test_split(
