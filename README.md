@@ -15,7 +15,7 @@
 This is an algorithm for evenly partitioning data in a `scikit-learn`-like interface.
 (See [References](#References) for details of the algorithm.)
 
-![simulateion_gif](https://github.com/yu9824/kennard_stone/blob/main/example/simulate.gif?raw=true "Simulateion")
+![simulation_gif](https://github.com/yu9824/kennard_stone/blob/main/example/simulate.gif?raw=true "simulation_gif")
 
 ## How to install
 
