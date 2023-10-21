@@ -15,7 +15,7 @@
 This is an algorithm for evenly partitioning data in a `scikit-learn`-like interface.
 (See [References](#References) for details of the algorithm.)
 
-![simulateion_gif](https://github.com/yu9824/kennard_stone/blob/main/example/simulate.gif?raw=true "Simulateion")
+![simulation_gif](https://github.com/yu9824/kennard_stone/blob/main/example/simulate.gif?raw=true "simulation_gif")
 
 ## How to install
 
@@ -35,7 +35,7 @@ conda install -c conda-forge kennard-stone
 
 The project site is [here](https://anaconda.org/conda-forge/kennard-stone).
 
-You need `numpy` and `scikit-learn` to run.
+You need `numpy>=1.20` and `scikit-learn` to run.
 
 ## How to use
 
@@ -178,6 +178,13 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 ```
 
+The parallelization is used when calculating the distance matrix,
+so it doesn't conflict with something like `cross_validate`  in parallel when using `KFold`.
+
+```python
+# OK: does not conflict each other
+cross_validate(estimator, X, y, cv=KFold(5, n_jobs=-1), n_jobs=-1)
+```
 
 ## LICENSE
 
@@ -199,7 +206,7 @@ Copyright (c) 2021 yu9824
 
 ## Histories
 
-### v2.0.0
+### v2.0.0 (deprecated)
 
 - Define Extended Kennard-Stone algorithm (multi-class) i.e. Improve KFold algorithm.
 - Delete `alternate` argument in `KFold`.
@@ -209,7 +216,7 @@ Copyright (c) 2021 yu9824
 
 - Fix bug with Python3.7.
 
-### v2.1.0
+### v2.1.0 (deprecated)
 
 - Optimize algorithm
 - Deal with Large number of data.
@@ -217,16 +224,16 @@ Copyright (c) 2021 yu9824
   - replacing recursive functions with for-loops
 - Add other than "euclidean" calculation methods (Add `metric` argument)
 
-### v2.1.1
+### v2.1.1 (deprecated)
 
 - Fix bug when `metric="nan_euclidean"`.
 
-### v2.1.2
+### v2.1.2 (deprecated)
 
 - Fix details.
   - Update docstrings and typings.
 
-### v2.1.3
+### v2.1.3 (deprecated)
 
 - Fix details.
   - Update some typings. (You have access to a list of strings that can be used in the metric.)
@@ -240,3 +247,8 @@ Copyright (c) 2021 yu9824
 ### v2.1.5
 
 - Delete "klusinski" metric to support scipy>=1.11
+
+### v2.1.6
+
+- Improve typing in `kennard_stone.train_test_split`
+- Add some docstrings.

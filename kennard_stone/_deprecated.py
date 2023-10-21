@@ -1,3 +1,15 @@
+"""
+This program was used in v1. It is implemented in a foolproof manner and is
+left for checking the calculation results.
+
+We do not recommend users to use it because it is very slow with no parallel
+computation implemented, and the problem is that it only implements
+the KennardStone method using Euclidean distance.
+
+Copyright © 2021 yu9824
+"""
+
+
 import numpy as np
 
 from sklearn.utils import check_array
