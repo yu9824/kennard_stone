@@ -193,6 +193,14 @@ If you have a GPU and have installed pytorch,
 you can use it to calculate Minkowski distances (Manhattan, Euclidean, and Chebyshev distances).
 
 
+```python
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, device="cuda"
+)
+
+```
+
+
 ## LICENSE
 
 MIT Licence
