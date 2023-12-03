@@ -47,6 +47,7 @@ def test_gpu_euclidian(prepare_data):
     assert np.allclose(distance_X_mean, distance_X_mean_gpu)
 
 
+@pytest.mark.skipif(device is None, reason="GPU is not available.")
 def test_gpu_manhattan(prepare_data):
     # 通常の距離行列
     X, _ = prepare_data
@@ -85,6 +86,7 @@ def test_gpu_manhattan(prepare_data):
     assert np.allclose(distance_X_mean, distance_X_mean_gpu.cpu().numpy())
 
 
+@pytest.mark.skipif(device is None, reason="GPU is not available.")
 def test_gpu_chebyshev(prepare_data):
     # 通常の距離行列
     X, _ = prepare_data
