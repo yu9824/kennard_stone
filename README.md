@@ -186,6 +186,13 @@ so it doesn't conflict with something like `cross_validate`  in parallel when us
 cross_validate(estimator, X, y, cv=KFold(5, n_jobs=-1), n_jobs=-1)
 ```
 
+
+## Using GPU
+
+If you have a GPU and have installed pytorch,
+you can use it to calculate Minkowski distances (Manhattan, Euclidean, and Chebyshev distances).
+
+
 ## LICENSE
 
 MIT Licence
