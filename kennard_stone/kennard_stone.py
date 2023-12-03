@@ -7,8 +7,6 @@ from typing import overload, Union, Optional, TypeVar
 # The fllowing has deprecated in Python >= 3.9
 from typing import List, Set, Generator, Callable
 
-import sys
-import pkgutil
 from itertools import chain
 import warnings
 
@@ -22,53 +20,21 @@ from sklearn.utils import indexable
 from sklearn.utils import _safe_indexing
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import VarianceThreshold
-from sklearn.metrics.pairwise import pairwise_distances
 from sklearn.utils import check_array
+
+# from sklearn.metrics.pairwise import pairwise_distances
+
+from kennard_stone.utils import (
+    IgnoredArgumentWarning,
+    METRICS,
+    DEVICE,
+    pairwise_distances,
+)
 
 # for typing
 T = TypeVar("T")
 
-
-class IgnoredArgumentWarning(Warning):
-    """Warning used to ignore an argument."""
-
-    pass
-
-
-if sys.version_info >= (3, 8) or (
-    "typing_extensions" in {_module.name for _module in pkgutil.iter_modules()}
-):
-    if sys.version_info >= (3, 8):
-        from typing import Literal
-    else:
-        from typing_extensions import Literal
-
-    METRCIS = Literal[
-        "cityblock",
-        "cosine",
-        "euclidean",
-        "l1",
-        "l2",
-        "manhattan",
-        "braycurtis",
-        "canberra",
-        "chebyshev",
-        "correlation",
-        "dice",
-        "hamming",
-        "jaccard",
-        "mahalanobis",
-        "minkowski",
-        "rogerstanimoto",
-        "russellrao",
-        "seuclidean",
-        "sokalmichener",
-        "sokalsneath",
-        "sqeuclidean",
-        "yule",
-    ]
-else:
-    METRICS = str
+# TODO: Update docstrings
 
 
 class KFold(_BaseKFold):
@@ -78,9 +44,10 @@ class KFold(_BaseKFold):
         n_splits: int = 5,
         *,
         metric: Union[
-            METRCIS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+            METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
         ] = "euclidean",
         n_jobs: Optional[int] = None,
+        device: DEVICE = "cpu",
     ) -> None:
         ...
 
@@ -89,9 +56,10 @@ class KFold(_BaseKFold):
         n_splits: int = 5,
         *,
         metric: Union[
-            METRCIS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+            METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
         ] = "euclidean",
         n_jobs: Optional[int] = None,
+        device: DEVICE = "cpu",
         random_state: None = None,
         shuffle: None = None,
     ) -> None:
@@ -102,7 +70,7 @@ class KFold(_BaseKFold):
         n_splits : int, optional
             Number of folds. Must be at least 2., by default 5
 
-        metric : Union[METRCIS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+        metric : Union[METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
             , optional
 
             The distance metric to use. See the documentation of
@@ -127,8 +95,20 @@ class KFold(_BaseKFold):
                 scipy.spatial.distance for details on these metrics.
                 These metrics do not support sparse matrix inputs.
 
+            If you want to use GPU when calculating the distance matrix
+            ('euclidean', 'manhattan', 'chebyshev' and 'minkowski'),
+            you need to install 'pytorch' and set `device` to 'cuda' or 'mps'.
+
         n_jobs : int, optional
-            The number of parallel jobs., by default None
+            The number of parallel jobs. It is valid only when CPU is used.
+            , by default None
+
+        device : Literal['cpu', 'cuda', 'mps'] or torch.device or str, optional
+            , by default 'cpu'
+
+            If you want to use GPU when calculating the distance matrix
+            ('euclidean', 'manhattan', 'chebyshev' and 'minkowski'),
+            you need to install 'pytorch' and set `device` to 'cuda' or 'mps'.
 
         random_state : None, deprecated
             This parameter is deprecated and has no effect
@@ -141,6 +121,7 @@ class KFold(_BaseKFold):
         super().__init__(n_splits=n_splits, shuffle=False, random_state=None)
         self.metric = metric
         self.n_jobs = n_jobs
+        self.device = device
 
         if shuffle is not None:
             warnings.warn(
@@ -166,6 +147,7 @@ class KFold(_BaseKFold):
             scale=True,
             metric=self.metric,
             n_jobs=self.n_jobs,
+            device=self.device,
         )
         indexes = ks.get_indexes(X)
 
@@ -181,15 +163,17 @@ class KSSplit(BaseShuffleSplit):
         test_size: Optional[Union[float, int]] = None,
         train_size: Optional[Union[float, int]] = None,
         metric: Union[
-            METRCIS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+            METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
         ] = "euclidean",
         n_jobs: Optional[int] = None,
+        device: DEVICE = "cpu",
     ):
         super().__init__(
             n_splits=n_splits, test_size=test_size, train_size=train_size
         )
         self.metric = metric
         self.n_jobs = n_jobs
+        self.device = device
 
         assert self.get_n_splits() == 1, "n_splits must be 1"
         self._default_test_size = 0.1
@@ -197,7 +181,11 @@ class KSSplit(BaseShuffleSplit):
     # overwrap abstractmethod
     def _iter_indices(self, X, y=None, groups=None):
         ks = _KennardStone(
-            n_groups=1, scale=True, metric=self.metric, n_jobs=self.n_jobs
+            n_groups=1,
+            scale=True,
+            metric=self.metric,
+            n_jobs=self.n_jobs,
+            device=self.device,
         )
         indexes = ks.get_indexes(X)[0]
 
@@ -221,9 +209,10 @@ def train_test_split(
     test_size: Optional[Union[float, int]] = None,
     train_size: Optional[Union[float, int]] = None,
     metric: Union[
-        METRCIS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+        METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
     ] = "euclidean",
     n_jobs: Optional[int] = None,
+    device: DEVICE = "cpu",
 ) -> List[T]:
     ...
 
@@ -233,9 +222,10 @@ def train_test_split(
     test_size: Optional[Union[float, int]] = None,
     train_size: Optional[Union[float, int]] = None,
     metric: Union[
-        METRCIS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+        METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
     ] = "euclidean",
     n_jobs: Optional[int] = None,
+    device: DEVICE = "cpu",
     random_state: None = None,
     shuffle: None = None,
 ) -> List[T]:
@@ -289,8 +279,20 @@ def train_test_split(
             scipy.spatial.distance for details on these metrics.
             These metrics do not support sparse matrix inputs.
 
+        If you want to use GPU when calculating the distance matrix
+        ('euclidean', 'manhattan', 'chebyshev' and 'minkowski'),
+        you need to install 'pytorch' and set `device` to 'cuda' or 'mps'.
+
     n_jobs : int, optional
-        The number of parallel jobs., by default None
+        The number of parallel jobs. It is valid only when CPU is used.
+        , by default None
+
+    device : Literal['cpu', 'cuda', 'mps'] or torch.device or str, optional
+        , by default 'cpu'
+
+        If you want to use GPU when calculating the distance matrix
+        ('euclidean', 'manhattan', 'chebyshev' and 'minkowski'),
+        you need to install 'pytorch' and set `device` to 'cuda' or 'mps'.
 
     random_state : None, deprecated
         This parameter is deprecated and has no effect
@@ -336,7 +338,11 @@ def train_test_split(
 
     CVClass = KSSplit
     cv = CVClass(
-        test_size=n_test, train_size=n_train, metric=metric, n_jobs=n_jobs
+        test_size=n_test,
+        train_size=n_train,
+        metric=metric,
+        n_jobs=n_jobs,
+        device=device,
     )
 
     train, test = next(cv.split(X=arrays[0]))
@@ -354,9 +360,10 @@ class _KennardStone:
         n_groups: int = 1,
         scale: bool = True,
         metric: Union[
-            METRCIS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+            METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
         ] = "euclidean",
         n_jobs: Optional[int] = None,
+        device: DEVICE = "cpu",
     ) -> None:
         """The root program of the Kennard-Stone algorithm,
         an algorithm for evenly partitioning data.
@@ -394,13 +401,26 @@ class _KennardStone:
                 scipy.spatial.distance for details on these metrics.
                 These metrics do not support sparse matrix inputs.
 
+            If you want to use GPU when calculating the distance matrix
+            ('euclidean', 'manhattan', 'chebyshev' and 'minkowski'),
+            you need to install 'pytorch' and set `device` to 'cuda' or 'mps'.
+
         n_jobs : int, optional
-            The number of parallel jobs., by default None
+            The number of parallel jobs. It is valid only when CPU is used.
+            , by default None
+
+        device : Literal['cpu', 'cuda', 'mps'] or torch.device or str, optional
+            , by default 'cpu'
+
+            If you want to use GPU when calculating the distance matrix
+            ('euclidean', 'manhattan', 'chebyshev' and 'minkowski'),
+            you need to install 'pytorch' and set `device` to 'cuda' or 'mps'.
         """
         self.n_groups = n_groups
         self.scale = scale
         self.metric = metric
         self.n_jobs = n_jobs
+        self.device = device
 
     def get_indexes(self, X: ArrayLike) -> List[List[int]]:
         """Sort indexes by the Kennard-Stone algorithm.
@@ -408,12 +428,12 @@ class _KennardStone:
         Parameters
         ----------
         X : ArrayLike
-            _description_
+            The data to be sorted.
 
         Returns
         -------
         List[List[int]]
-            _description_
+            The sorted indexes.
         """
         # check input array
         X: np.ndarray = check_array(
@@ -439,7 +459,7 @@ class _KennardStone:
 
         # Pre-calculate the distance matrix.
         self.distance_matrix = pairwise_distances(
-            X, metric=self.metric, n_jobs=self.n_jobs
+            X, metric=self.metric, n_jobs=self.n_jobs, device=self.device
         )
 
         # 全ての組成に対してそれぞれの平均との距離の二乗を配列として得る． (サンプル数の分だけ存在)
@@ -457,6 +477,7 @@ class _KennardStone:
             X.mean(axis=0, keepdims=True),
             metric=self.metric,
             n_jobs=self.n_jobs,
+            device=self.device,
             **kwargs_pairwise_distances,
         ).ravel()
 

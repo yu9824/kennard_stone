@@ -26,7 +26,7 @@ def test_train_test_split(prepare_data):
 def test_KFold(prepare_data):
     X, y = prepare_data
     estimator = RandomForestRegressor(random_state=334, n_jobs=-1)
-    kf = KFold(n_splits=5, shuffle=True)
+    kf = KFold(n_splits=5)
     cross_validate(
         estimator,
         X,

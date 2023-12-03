@@ -15,7 +15,7 @@
 This is an algorithm for evenly partitioning data in a `scikit-learn`-like interface.
 (See [References](#References) for details of the algorithm.)
 
-![simulation_gif](https://github.com/yu9824/kennard_stone/blob/main/example/simulate.gif?raw=true "simulation_gif")
+![simulation_gif](https://github.com/yu9824/kennard_stone/blob/main/examples/simulate.gif?raw=true "simulation_gif")
 
 ## How to install
 
@@ -41,7 +41,7 @@ You need `numpy>=1.20` and `scikit-learn` to run.
 
 You can use them like [scikit-learn](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection).
 
-See [example](https://github.com/yu9824/kennard_stone/tree/main/example) for details.
+See [examples](https://github.com/yu9824/kennard_stone/tree/main/examples) for details.
 
 In the following, `X` denotes an arbitrary explanatory variable and `y` an arbitrary objective variable.
 And, `estimator` indicates an arbitrary prediction model that conforms to scikit-learn.
@@ -135,7 +135,7 @@ print(cross_validate(estimator, X, y, cv=5))
 There is no notion of `random_state` or `shuffle` because the partitioning is determined uniquely for the dataset.
 If these arguments are included, they do not cause an error. They simply have no effect on the result. Please be careful.
 
-If you want to run the notebook in example directory,
+If you want to run the notebook in examples directory,
 you will need to additionally install `pandas`, `matplotlib`, `seaborn`, `tqdm`, and `jupyter` other than the packages in requirements.txt.
 
 ## Distance metrics
@@ -252,3 +252,8 @@ Copyright (c) 2021 yu9824
 
 - Improve typing in `kennard_stone.train_test_split`
 - Add some docstrings.
+
+### v2.2.0
+
+- Supports GPU calculations. (when metric is 'euclidean', 'manhattan', 'chebyshev' and 'minkowski')
+- Supports Python 3.12
