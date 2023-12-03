@@ -252,3 +252,8 @@ Copyright (c) 2021 yu9824
 
 - Improve typing in `kennard_stone.train_test_split`
 - Add some docstrings.
+
+### v2.2.0
+
+- Supports GPU calculations. (when metric is 'euclidean', 'manhattan', 'chebyshev' and 'minkowski')
+- Supports Python 3.12
