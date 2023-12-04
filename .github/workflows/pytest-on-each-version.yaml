@@ -4,8 +4,8 @@ name: Test on each version
 
 on:
   push:
-    branches:
-      - 'main'
+    paths:
+    - kennard_stone/__init__.py
 
 jobs:
   build-linux:
