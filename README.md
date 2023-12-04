@@ -186,6 +186,21 @@ so it doesn't conflict with something like `cross_validate`  in parallel when us
 cross_validate(estimator, X, y, cv=KFold(5, n_jobs=-1), n_jobs=-1)
 ```
 
+
+## Using GPU
+
+If you have a GPU and have installed pytorch,
+you can use it to calculate Minkowski distances (Manhattan, Euclidean, and Chebyshev distances).
+
+
+```python
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, device="cuda"
+)
+
+```
+
+
 ## LICENSE
 
 MIT Licence
@@ -257,3 +272,9 @@ Copyright (c) 2021 yu9824
 
 - Supports GPU calculations. (when metric is 'euclidean', 'manhattan', 'chebyshev' and 'minkowski')
 - Supports Python 3.12
+
+
+### v2.2.1
+
+- Fix setup.cfg
+- Update 'typing'
