@@ -28,6 +28,10 @@ def is_installed(name: str) -> bool:
     return pkgutil.find_loader(name) is not None
 
 
+if is_installed("torch"):
+    import torch
+
+
 if sys.version_info >= (3, 8) or is_installed("typing_extensions"):
     if sys.version_info >= (3, 8):
         from typing import Literal
@@ -61,26 +65,19 @@ if sys.version_info >= (3, 8) or is_installed("typing_extensions"):
 else:
     METRICS = str
 
-if is_installed("torch"):
-    import torch
-
-    if sys.version_info >= (3, 8) or is_installed("typing_extensions"):
-        if sys.version_info >= (3, 8):
-            from typing import Literal
-        else:
-            from typing_extensions import Literal
-
-        DEVICE = Union[torch.device, Literal["cpu", "cuda", "mps"], str]
-    else:
-        DEVICE = Union[torch.device, str]
-elif sys.version_info >= (3, 8) or is_installed("typing_extensions"):
+if sys.version_info >= (3, 8) or is_installed("typing_extensions"):
     if sys.version_info >= (3, 8):
         from typing import Literal
     else:
         from typing_extensions import Literal
-    DEVICE = Union[Literal["cpu", "cuda", "mps"], str]
+
+    DEVICE = (
+        Union[torch.device, Literal["cpu", "cuda", "mps"], str]
+        if is_installed("torch")
+        else Literal["cpu"]
+    )
 else:
-    DEVICE = str
+    DEVICE = Union[torch.device, str] if is_installed("torch") else str
 
 
 def pairwise_distances(

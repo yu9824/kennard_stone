@@ -272,3 +272,9 @@ Copyright (c) 2021 yu9824
 
 - Supports GPU calculations. (when metric is 'euclidean', 'manhattan', 'chebyshev' and 'minkowski')
 - Supports Python 3.12
+
+
+### v2.2.1
+
+- Fix setup.cfg
+- Update 'typing'
