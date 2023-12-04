@@ -7,7 +7,7 @@ Copyright © 2021 yu9824
 
 from .kennard_stone import KFold, train_test_split
 
-__version__ = "2.2.1"
+__version__ = "2.2.2dev0"
 __license__ = "MIT"
 __author__ = "yu9824"
 __copyright__ = "Copyright © 2021 yu9824"
