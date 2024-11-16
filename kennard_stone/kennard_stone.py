@@ -2,32 +2,37 @@
 Copyright © 2021 yu9824
 """
 
-from typing import overload, Union, Optional, TypeVar
+from __future__ import annotations
 
-# The fllowing has deprecated in Python >= 3.9
-from typing import List, Set, Generator, Callable
+import sys
+from typing import Optional, TypeVar, Union, overload
 
-from itertools import chain
+if sys.version_info >= (3, 9):
+    from collections.abc import Callable, Generator
+else:
+    from typing import Callable, Generator
+
+
 import warnings
+from itertools import chain
 
 import numpy as np
 from numpy.typing import ArrayLike
-from sklearn.model_selection._split import BaseShuffleSplit
-from sklearn.model_selection._split import _BaseKFold
-from sklearn.model_selection._split import _validate_shuffle_split
-from sklearn.utils.validation import _num_samples
-from sklearn.utils import indexable
-from sklearn.utils import _safe_indexing
-from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import VarianceThreshold
-from sklearn.utils import check_array
+from sklearn.model_selection._split import (
+    BaseShuffleSplit,
+    _BaseKFold,
+    _validate_shuffle_split,
+)
+from sklearn.preprocessing import StandardScaler
+from sklearn.utils import _safe_indexing, check_array, indexable
+from sklearn.utils.validation import _num_samples
 
 # from sklearn.metrics.pairwise import pairwise_distances
-
 from kennard_stone.utils import (
-    IgnoredArgumentWarning,
-    METRICS,
     DEVICE,
+    METRICS,
+    IgnoredArgumentWarning,
     pairwise_distances,
 )
 
@@ -48,8 +53,7 @@ class KFold(_BaseKFold):
         ] = "euclidean",
         n_jobs: Optional[int] = None,
         device: DEVICE = "cpu",
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def __init__(
         self,
@@ -141,7 +145,7 @@ class KFold(_BaseKFold):
 
     def _iter_test_indices(
         self, X=None, y=None, groups=None
-    ) -> Generator[List[int], None, None]:
+    ) -> Generator[list[int], None, None]:
         ks = _KennardStone(
             n_groups=self.get_n_splits(),
             scale=True,
@@ -213,8 +217,7 @@ def train_test_split(
     ] = "euclidean",
     n_jobs: Optional[int] = None,
     device: DEVICE = "cpu",
-) -> List[T]:
-    ...
+) -> list[T]: ...
 
 
 def train_test_split(
@@ -228,7 +231,7 @@ def train_test_split(
     device: DEVICE = "cpu",
     random_state: None = None,
     shuffle: None = None,
-) -> List[T]:
+) -> list[T]:
     """Split arrays or matrices into train and test subsets using the
     Kennard-Stone algorithm.
 
@@ -422,7 +425,7 @@ class _KennardStone:
         self.n_jobs = n_jobs
         self.device = device
 
-    def get_indexes(self, X: ArrayLike) -> List[List[int]]:
+    def get_indexes(self, X: ArrayLike) -> list[list[int]]:
         """Sort indexes by the Kennard-Stone algorithm.
 
         Parameters
@@ -432,7 +435,7 @@ class _KennardStone:
 
         Returns
         -------
-        List[List[int]]
+        list[list[int]]
             The sorted indexes.
         """
         # check input array
@@ -482,7 +485,7 @@ class _KennardStone:
         ).ravel()
 
         # 最大値を取るサンプル (平均からの距離が一番遠い) のindex_numberを保存
-        idx_farthest: List[int] = np.argsort(distance_to_ave)[::-1][
+        idx_farthest: list[int] = np.argsort(distance_to_ave)[::-1][
             : self.n_groups
         ].tolist()
 
@@ -497,8 +500,8 @@ class _KennardStone:
             n_samples // self.n_groups + bool(n_samples % self.n_groups) - 1
         ):
             # collect the current indexes
-            indexes_remaining: List[int] = list()
-            arg_selected: List[int] = list()
+            indexes_remaining: list[int] = list()
+            arg_selected: list[int] = list()
             for j, idx in enumerate(indexes_remaining_prev):
                 if idx in set(indexes_selected):
                     arg_selected.append(j)
@@ -534,8 +537,8 @@ class _KennardStone:
             # まだ選択されていない各サンプルにおいて、これまで選択されたすべてのサンプルとの間で
             # ユークリッド距離を計算し，その最小の値を「代表長さ」とする．
 
-            _st_arg_delete: Set[int] = set()
-            indexes_selected_next: List[int] = list()
+            _st_arg_delete: set[int] = set()
+            indexes_selected_next: list[int] = list()
             for k in range(self.n_groups):
                 if k == 0:
                     arg_delete = np.argmax(
@@ -563,7 +566,7 @@ class _KennardStone:
             indexes_remaining_prev = indexes_remaining
         else:  # もうないなら遠い順から近い順 (test側) に並べ替えて終える
             assert n_remaining - len(indexes_selected_next) <= 0
-            indexes_output: List[List[int]] = []
+            indexes_output: list[list[int]] = []
             for k in range(self.n_groups):
                 indexes_selected_reversed = lst_indexes_selected[k][::-1]
                 if k < len(indexes_selected_next):
