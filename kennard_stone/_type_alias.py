@@ -9,7 +9,7 @@ if is_installed("torch"):
         "torch.device", str, Literal["cpu", "cuda", "mps"]
     ]
 else:
-    Device: TypeAlias = Union[str, Literal["cpu"]]
+    Device: TypeAlias = Union[str, Literal["cpu"]]  # type: ignore[misc,no-redef]
 
 Metrics: TypeAlias = Literal[
     "cityblock",
