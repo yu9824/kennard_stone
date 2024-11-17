@@ -31,7 +31,7 @@ classifiers = [
 ] # https://pypi.org/classifiers/
 
 [project.optional-dependencies]
-test = ["pytest"]
+test = ["pytest", "pandas"]
 dev = ["build"]
 optional = ["colorlog", "torch", "torchvision", "torchaudio"]
 example = ["tqdm", "jupyter", "pandas"]
