@@ -4,9 +4,11 @@ name: Tests
 run-name: ${{ github.workflow }} (${{ github.ref_name }})
 
 on:
+  workflow_dispatch:
   push:
-    paths:
-    - kennard_stone/__init__.py
+    branches:
+      - 'main'
+      - 'dev'
 
 jobs:
   build-linux:
