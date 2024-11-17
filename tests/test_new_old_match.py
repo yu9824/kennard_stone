@@ -1,7 +1,6 @@
 from sklearn.datasets import load_diabetes
 
-from kennard_stone import kennard_stone
-from kennard_stone import _deprecated
+from kennard_stone import _deprecated, kennard_stone
 
 
 def test_new_old_match():
@@ -11,4 +10,4 @@ def test_new_old_match():
     ks_old = _deprecated._KennardStone()
     ks_new = kennard_stone._KennardStone(n_groups=1)
 
-    assert ks_old._get_indexes(X) == ks_new.get_indexes(X)[0]
+    assert ks_old._get_indexes(X) == ks_new.get_indexes(X)[0].tolist()

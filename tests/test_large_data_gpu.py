@@ -1,5 +1,5 @@
-from sklearn.datasets import fetch_california_housing
 import pytest
+from sklearn.datasets import fetch_california_housing
 
 from kennard_stone import train_test_split
 from kennard_stone.utils import is_installed

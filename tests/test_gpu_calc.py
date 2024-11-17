@@ -1,8 +1,8 @@
 import numpy as np
-from sklearn.datasets import load_diabetes
 import pytest
+from sklearn.datasets import load_diabetes
 
-from kennard_stone.utils import pairwise_distances, is_installed
+from kennard_stone.utils import is_installed, pairwise_distances
 
 if is_installed("torch"):
     import torch
