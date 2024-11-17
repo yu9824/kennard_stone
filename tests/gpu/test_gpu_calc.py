@@ -10,7 +10,6 @@ from kennard_stone.utils._utils import is_available_gpu
 def test_gpu_manhattan(metric, prepare_data, get_device):
     X, _ = prepare_data
     X_mean = X.mean(axis=0, keepdims=True)
-    print(get_device)
 
     # 通常の距離行列
     assert np.allclose(

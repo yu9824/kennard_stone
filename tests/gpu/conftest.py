@@ -6,14 +6,13 @@ import pytest
 
 from kennard_stone.utils import is_installed
 
-if is_installed("torch"):
-    import torch  # type: ignore
-
 
 @pytest.fixture(scope="session")
 def get_device() -> Literal["cuda", "mps", "cpu"]:
     device: Literal["cuda", "mps", "cpu"]
     if is_installed("torch"):
+        import torch  # type: ignore
+
         if torch.cuda.is_available():
             device = "cuda"
         elif torch.backends.mps.is_available():
@@ -22,4 +21,5 @@ def get_device() -> Literal["cuda", "mps", "cpu"]:
             device = "cpu"
     else:
         device = "cpu"
+    print(device)
     return device
