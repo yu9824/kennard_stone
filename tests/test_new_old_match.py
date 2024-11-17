@@ -5,8 +5,7 @@ from kennard_stone._core import _core
 
 
 def test_new_old_match():
-    diabetes = load_diabetes(as_frame=True)
-    X = diabetes.data
+    X, _ = load_diabetes(return_X_y=True)
 
     ks_old = _deprecated._KennardStone()
     ks_new = _core._KennardStone(n_groups=1)
