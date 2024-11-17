@@ -6,7 +6,7 @@ if sys.version_info >= (3, 10):
 else:
     from typing_extensions import TypeAlias
 
-from .utils import is_installed
+from ._utils import is_installed
 
 if is_installed("torch"):
     import torch  # type: ignore

@@ -1,4 +1,3 @@
-import importlib.util
 import sys
 import warnings
 from typing import Optional, Union
@@ -13,28 +12,7 @@ import sklearn.metrics.pairwise
 from numpy.typing import ArrayLike
 
 from ._type_alias import Device, Metrics
-
-
-class IgnoredArgumentWarning(Warning):
-    """Warning used to ignore an argument."""
-
-    ...
-
-
-def is_installed(package_name: str) -> bool:
-    """Check if the package is installed.
-
-    Parameters
-    ----------
-    package_name : str
-        package name like `sklearn`
-
-    Returns
-    -------
-    bool
-        if installed, True
-    """
-    return bool(importlib.util.find_spec(package_name))
+from ._utils import is_installed
 
 
 def pairwise_distances(
