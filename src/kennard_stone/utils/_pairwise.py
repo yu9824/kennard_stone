@@ -79,9 +79,9 @@ def pairwise_distances(
 
     if available_torch:
         # Convert NumPy array to PyTorch tensor and move it to GPU
-        X_tensor = torch.tensor(X, dtype=torch.float32).to(device)
+        X_tensor = torch.tensor(X, dtype=torch.float32, device=device)
         if Y is not None:
-            Y_tensor = torch.tensor(Y, dtype=torch.float32).to(device)
+            Y_tensor = torch.tensor(Y, dtype=torch.float32, device=device)
         else:
             Y_tensor = X_tensor
 
