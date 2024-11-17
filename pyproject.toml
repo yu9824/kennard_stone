@@ -33,7 +33,8 @@ classifiers = [
 [project.optional-dependencies]
 test = ["pytest"]
 dev = ["build"]
-optional = ["colorlog", "tqdm"]
+optional = ["colorlog", "torch", "torchvision", "torchaudio"]
+example = ["tqdm", "jupyter"]
 docs = ["sphinx", "sphinx_rtd_theme", "sphinx-markdown-tables", "recommonmark"]
 gui = ["TkEasyGUI"]
 
