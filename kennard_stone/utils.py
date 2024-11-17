@@ -3,6 +3,11 @@ import sys
 import warnings
 from typing import Optional, Union
 
+if sys.version_info >= (3, 9):
+    from collections.abc import Callable
+else:
+    from typing import Callable
+
 import numpy as np
 import sklearn.metrics.pairwise
 from numpy.typing import ArrayLike
@@ -35,12 +40,14 @@ def is_installed(package_name: str) -> bool:
 def pairwise_distances(
     X: ArrayLike,
     Y: Optional[ArrayLike] = None,
-    metric: Metrics = "euclidean",
+    metric: Union[
+        Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
+    ] = "euclidean",
     n_jobs: Optional[int] = None,
     force_all_finite=True,
     device: Device = "cpu",
     verbose: int = 1,
-    **kwds,
+    **kwargs,
 ) -> np.ndarray:
     """Wrapper function for 'sklearn.metrics.pairwise.pairwise_distances' and
     'torch.cdist'.
@@ -109,7 +116,7 @@ def pairwise_distances(
         elif metric == "chebyshev":
             p = float("inf")
         elif metric == "minowski":
-            p = kwds.get("p", 2)
+            p = kwargs.get("p", 2)
         else:
             p = None
             warnings.warn(f"{metric} is not supported by PyTorch. ")
@@ -127,7 +134,7 @@ def pairwise_distances(
             metric=metric,
             n_jobs=n_jobs,
             force_all_finite=force_all_finite,
-            **kwds,
+            **kwargs,
         )
     else:
         if verbose > 0:

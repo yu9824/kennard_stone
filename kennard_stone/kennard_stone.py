@@ -6,8 +6,9 @@ from __future__ import annotations
 
 import sys
 import warnings
+from array import array
 from itertools import chain
-from typing import Optional, TypeVar, Union, overload
+from typing import Any, Optional, TypeVar, Union, overload
 
 if sys.version_info >= (3, 9):
     from collections.abc import Callable, Generator
@@ -132,7 +133,7 @@ class KFold(_BaseKFold):
 
     def _iter_test_indices(
         self, X=None, y=None, groups=None
-    ) -> Generator[list[int], None, None]:
+    ) -> Generator[array[int], None, None]:
         ks = _KennardStone(
             n_groups=self.get_n_splits(),
             scale=True,
@@ -412,7 +413,7 @@ class _KennardStone:
         self.n_jobs = n_jobs
         self.device = device
 
-    def get_indexes(self, X: ArrayLike) -> list[list[int]]:
+    def get_indexes(self, X: ArrayLike) -> list[array[int]]:
         """Sort indexes by the Kennard-Stone algorithm.
 
         Parameters
@@ -422,11 +423,11 @@ class _KennardStone:
 
         Returns
         -------
-        list[list[int]]
+        list[array[int]]
             The sorted indexes.
         """
         # check input array
-        X: np.ndarray = check_array(
+        X_checked: np.ndarray = check_array(
             X,
             ensure_2d=True,
             dtype="numeric",
@@ -434,37 +435,40 @@ class _KennardStone:
             if self.metric == "nan_euclidean"
             else True,
         )
-        n_samples = X.shape[0]
+        n_samples = X_checked.shape[0]
 
         # drop no variance
         vselector = VarianceThreshold(threshold=0.0)
-        X = vselector.fit_transform(X)
+        X_checked = vselector.fit_transform(X_checked)
 
         if self.scale:
             scaler = StandardScaler()
-            X = scaler.fit_transform(X)
+            X_checked = scaler.fit_transform(X_checked)
 
-        # Save the original X.
-        # self._original_X = X.copy()
+        # Save the original X_checked.
+        # self._original_X = X_checked.copy()
 
         # Pre-calculate the distance matrix.
         self.distance_matrix = pairwise_distances(
-            X, metric=self.metric, n_jobs=self.n_jobs, device=self.device
+            X_checked,
+            metric=self.metric,
+            n_jobs=self.n_jobs,
+            device=self.device,
         )
 
         # 全ての組成に対してそれぞれの平均との距離の二乗を配列として得る． (サンプル数の分だけ存在)
-        # distance_to_ave = np.sum(np.square(X - X.mean(axis=0)), axis=1)
-        kwargs_pairwise_distances = dict()
+        # distance_to_ave = np.sum(np.square(X_checked - X_checked.mean(axis=0)), axis=1)
+        kwargs_pairwise_distances: dict[str, Any] = dict()
         if self.metric == "mahalanobis":
             kwargs_pairwise_distances["VI"] = np.linalg.inv(
-                np.cov(X, rowvar=False)
+                np.cov(X_checked, rowvar=False)
             )
         elif self.metric == "seuclidean":
-            kwargs_pairwise_distances["V"] = np.var(X, axis=0, ddof=1)
+            kwargs_pairwise_distances["V"] = np.var(X_checked, axis=0, ddof=1)
 
         distance_to_ave = pairwise_distances(
-            X,
-            X.mean(axis=0, keepdims=True),
+            X_checked,
+            X_checked.mean(axis=0, keepdims=True),
             metric=self.metric,
             n_jobs=self.n_jobs,
             device=self.device,
@@ -472,23 +476,25 @@ class _KennardStone:
         ).ravel()
 
         # 最大値を取るサンプル (平均からの距離が一番遠い) のindex_numberを保存
-        idx_farthest: list[int] = np.argsort(distance_to_ave)[::-1][
-            : self.n_groups
-        ].tolist()
+        idx_farthest: array[int] = array(
+            "i", np.argsort(distance_to_ave)[::-1][: self.n_groups].tolist()
+        )
 
         distance_min = self.distance_matrix[idx_farthest, :]
 
         # params
         indexes_selected = idx_farthest
-        lst_indexes_selected_prev = [[] for _ in range(self.n_groups)]
-        indexes_remaining_prev = list(range(n_samples))
+        lst_indexes_selected_prev: list[array[int]] = [
+            array("L") for _ in range(self.n_groups)
+        ]
+        indexes_remaining_prev = array("L", range(n_samples))
 
         for _ in range(
             n_samples // self.n_groups + bool(n_samples % self.n_groups) - 1
         ):
             # collect the current indexes
-            indexes_remaining: list[int] = list()
-            arg_selected: list[int] = list()
+            indexes_remaining: array[int] = array("L")
+            arg_selected: array[int] = array("L")
             for j, idx in enumerate(indexes_remaining_prev):
                 if idx in set(indexes_selected):
                     arg_selected.append(j)
@@ -497,7 +503,7 @@ class _KennardStone:
             n_remaining = len(indexes_remaining)
 
             lst_indexes_selected = [
-                indexes_selected_prev + [index_selected]
+                indexes_selected_prev + array("L", (index_selected,))
                 for indexes_selected_prev, index_selected in zip(
                     lst_indexes_selected_prev, indexes_selected
                 )
@@ -510,7 +516,7 @@ class _KennardStone:
             ]
             distance_min = np.delete(distance_min, arg_selected, axis=1)
 
-            distance_min: np.ndarray = np.min(
+            distance_min = np.min(
                 np.concatenate(
                     [
                         distance_selected.reshape(self.n_groups, 1, -1),
@@ -525,15 +531,18 @@ class _KennardStone:
             # ユークリッド距離を計算し，その最小の値を「代表長さ」とする．
 
             _st_arg_delete: set[int] = set()
-            indexes_selected_next: list[int] = list()
+            indexes_selected_next: array[int] = array("L")
             for k in range(self.n_groups):
                 if k == 0:
                     arg_delete = np.argmax(
                         distance_min[k],
-                    )
+                    ).item()
                 elif 0 < n_remaining - k:
-                    sorted_args = np.argsort(
-                        distance_min[k],
+                    sorted_args = array(
+                        "L",
+                        np.argsort(
+                            distance_min[k],
+                        ).tolist(),
                     )
                     # 最大値を取るサンプル (代表長さが最も大きい) のindex_numberを保存
                     for j in range(n_remaining - k, -1, -1):
@@ -553,13 +562,14 @@ class _KennardStone:
             indexes_remaining_prev = indexes_remaining
         else:  # もうないなら遠い順から近い順 (test側) に並べ替えて終える
             assert n_remaining - len(indexes_selected_next) <= 0
-            indexes_output: list[list[int]] = []
+            indexes_output: list[array[int]] = []
             for k in range(self.n_groups):
                 indexes_selected_reversed = lst_indexes_selected[k][::-1]
                 if k < len(indexes_selected_next):
                     index_selected_next = indexes_selected_next[k]
                     indexes_output.append(
-                        [index_selected_next] + indexes_selected_reversed
+                        array("L", (index_selected_next,))
+                        + indexes_selected_reversed
                     )
                 else:
                     indexes_output.append(indexes_selected_reversed)
