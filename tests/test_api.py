@@ -1,17 +1,7 @@
-from sklearn.datasets import load_diabetes
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import cross_validate
-import pytest
 
-from kennard_stone import train_test_split, KFold
-
-
-@pytest.fixture
-def prepare_data():
-    diabetes = load_diabetes(as_frame=True)
-    X = diabetes.data
-    y = diabetes.target
-    return (X, y)
+from kennard_stone import KFold, train_test_split
 
 
 def test_train_test_split(prepare_data):
