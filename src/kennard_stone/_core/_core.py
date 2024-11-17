@@ -28,9 +28,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.utils import _safe_indexing, check_array, indexable
 from sklearn.utils.validation import _num_samples
 
-from .utils._pairwise import pairwise_distances
-from .utils._type_alias import Device, Metrics
-from .utils._utils import (
+from ..utils._pairwise import pairwise_distances
+from ..utils._type_alias import Device, Metrics
+from ..utils._utils import (
     IgnoredArgumentWarning,
 )
 

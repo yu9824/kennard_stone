@@ -5,7 +5,7 @@ interface.
 Copyright © 2021 yu9824
 """
 
-from .kennard_stone import KFold, train_test_split
+from ._core._core import KFold, train_test_split
 
 __version__ = "2.2.2dev0"
 __license__ = "MIT"
