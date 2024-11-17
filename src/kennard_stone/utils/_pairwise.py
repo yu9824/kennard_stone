@@ -11,8 +11,11 @@ import numpy as np
 import sklearn.metrics.pairwise
 from numpy.typing import ArrayLike
 
+from ..logging import get_child_logger
 from ._type_alias import Device, Metrics
 from ._utils import is_installed
+
+_logger = get_child_logger(__name__)
 
 
 def pairwise_distances(
@@ -103,7 +106,7 @@ def pairwise_distances(
 
     if p is None:
         if verbose > 0:
-            sys.stdout.write(
+            _logger.info(
                 "Calculating pairwise distances using scikit-learn.\n"
             )
         return sklearn.metrics.pairwise.pairwise_distances(
@@ -116,7 +119,7 @@ def pairwise_distances(
         )
     else:
         if verbose > 0:
-            warnings.warn(
+            _logger.info(
                 f"Calculating pairwise distances using PyTorch on '{device}'."
             )
         disntace_tensor = torch.cdist(X_tensor, Y_tensor, p=p)
