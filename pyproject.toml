@@ -34,7 +34,7 @@ classifiers = [
 test = ["pytest"]
 dev = ["build"]
 optional = ["colorlog", "torch", "torchvision", "torchaudio"]
-example = ["tqdm", "jupyter"]
+example = ["tqdm", "jupyter", "pandas"]
 docs = ["sphinx", "sphinx_rtd_theme", "sphinx-markdown-tables", "recommonmark"]
 gui = ["TkEasyGUI"]
 
