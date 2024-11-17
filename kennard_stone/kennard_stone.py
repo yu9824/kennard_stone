@@ -28,13 +28,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.utils import _safe_indexing, check_array, indexable
 from sklearn.utils.validation import _num_samples
 
-# from sklearn.metrics.pairwise import pairwise_distances
-from kennard_stone.utils import (
+from .utils._pairwise import pairwise_distances
+from .utils._type_alias import Device, Metrics
+from .utils._utils import (
     IgnoredArgumentWarning,
-    pairwise_distances,
 )
-
-from ._type_alias import Device, Metrics
 
 # for typing
 T = TypeVar("T")
@@ -171,7 +169,9 @@ class KSSplit(BaseShuffleSplit):
         self._default_test_size = 0.1
 
     # overwrap abstractmethod
-    def _iter_indices(self, X, y=None, groups=None):
+    def _iter_indices(
+        self, X, y=None, groups=None
+    ) -> Generator[tuple[list[int], list[int]], None, None]:
         ks = _KennardStone(
             n_groups=1,
             scale=True,
@@ -192,7 +192,7 @@ class KSSplit(BaseShuffleSplit):
         for _ in range(self.get_n_splits()):
             ind_test = indexes[:n_test]
             ind_train = indexes[n_test : (n_test + n_train)]  # noqa: E203
-            yield ind_train, ind_test
+            yield ind_train.tolist(), ind_test.tolist()
 
 
 @overload
@@ -327,8 +327,7 @@ def train_test_split(
         n_samples, test_size, train_size, default_test_size=0.25
     )
 
-    CVClass = KSSplit
-    cv = CVClass(
+    cv = KSSplit(
         test_size=n_test,
         train_size=n_train,
         metric=metric,
