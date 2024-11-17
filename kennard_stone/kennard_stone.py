@@ -5,6 +5,8 @@ Copyright © 2021 yu9824
 from __future__ import annotations
 
 import sys
+import warnings
+from itertools import chain
 from typing import Optional, TypeVar, Union, overload
 
 if sys.version_info >= (3, 9):
@@ -12,9 +14,6 @@ if sys.version_info >= (3, 9):
 else:
     from typing import Callable, Generator
 
-
-import warnings
-from itertools import chain
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -30,11 +29,11 @@ from sklearn.utils.validation import _num_samples
 
 # from sklearn.metrics.pairwise import pairwise_distances
 from kennard_stone.utils import (
-    DEVICE,
-    METRICS,
     IgnoredArgumentWarning,
     pairwise_distances,
 )
+
+from ._type_alias import Device, Metrics
 
 # for typing
 T = TypeVar("T")
@@ -43,29 +42,17 @@ T = TypeVar("T")
 
 
 class KFold(_BaseKFold):
-    @overload
     def __init__(
         self,
         n_splits: int = 5,
         *,
         metric: Union[
-            METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+            Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
         ] = "euclidean",
         n_jobs: Optional[int] = None,
-        device: DEVICE = "cpu",
-    ) -> None: ...
-
-    def __init__(
-        self,
-        n_splits: int = 5,
-        *,
-        metric: Union[
-            METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
-        ] = "euclidean",
-        n_jobs: Optional[int] = None,
-        device: DEVICE = "cpu",
-        random_state: None = None,
+        device: Device = "cpu",
         shuffle: None = None,
+        random_state: None = None,
     ) -> None:
         """K-Folds cross-validator using the Kennard-Stone algorithm.
 
@@ -74,7 +61,7 @@ class KFold(_BaseKFold):
         n_splits : int, optional
             Number of folds. Must be at least 2., by default 5
 
-        metric : Union[METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+        metric : Union[Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
             , optional
 
             The distance metric to use. See the documentation of
@@ -167,10 +154,10 @@ class KSSplit(BaseShuffleSplit):
         test_size: Optional[Union[float, int]] = None,
         train_size: Optional[Union[float, int]] = None,
         metric: Union[
-            METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+            Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
         ] = "euclidean",
         n_jobs: Optional[int] = None,
-        device: DEVICE = "cpu",
+        device: Device = "cpu",
     ):
         super().__init__(
             n_splits=n_splits, test_size=test_size, train_size=train_size
@@ -213,10 +200,10 @@ def train_test_split(
     test_size: Optional[Union[float, int]] = None,
     train_size: Optional[Union[float, int]] = None,
     metric: Union[
-        METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+        Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
     ] = "euclidean",
     n_jobs: Optional[int] = None,
-    device: DEVICE = "cpu",
+    device: Device = "cpu",
 ) -> list[T]: ...
 
 
@@ -225,10 +212,10 @@ def train_test_split(
     test_size: Optional[Union[float, int]] = None,
     train_size: Optional[Union[float, int]] = None,
     metric: Union[
-        METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+        Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
     ] = "euclidean",
     n_jobs: Optional[int] = None,
-    device: DEVICE = "cpu",
+    device: Device = "cpu",
     random_state: None = None,
     shuffle: None = None,
 ) -> list[T]:
@@ -257,7 +244,7 @@ def train_test_split(
         absolute number of train samples. If None, the value is automatically
         set to the complement of the test size., by default None
 
-    metric : Union[METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]]
+    metric : Union[Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]]
         , optional
 
         The distance metric to use. See the documentation of
@@ -363,10 +350,10 @@ class _KennardStone:
         n_groups: int = 1,
         scale: bool = True,
         metric: Union[
-            METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+            Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
         ] = "euclidean",
         n_jobs: Optional[int] = None,
-        device: DEVICE = "cpu",
+        device: Device = "cpu",
     ) -> None:
         """The root program of the Kennard-Stone algorithm,
         an algorithm for evenly partitioning data.
@@ -379,7 +366,7 @@ class _KennardStone:
         scale : bool, optional
             scaling X or not, by default True
 
-        metric : Union[METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]]
+        metric : Union[Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]]
             , optional
 
             The distance metric to use. See the documentation of
