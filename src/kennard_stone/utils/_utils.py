@@ -21,3 +21,12 @@ def is_installed(package_name: str) -> bool:
         if installed, True
     """
     return bool(importlib.util.find_spec(package_name))
+
+
+def is_available_gpu() -> bool:
+    if is_installed("torch"):
+        import torch  # type: ignore
+
+        return torch.cuda.is_available() or torch.backends.mps.is_available()
+    else:
+        return False
