@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-python@v5
       - name: Install dependencies
         run: |
-          pip install .[docs]
+          pip install .[docs,optional]
       - name: sphinx-apidoc
         run: |
           sphinx-apidoc -f -o ./docs_src ./src/kennard_stone --module-first
