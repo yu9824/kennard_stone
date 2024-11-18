@@ -6,6 +6,8 @@
 [![Downloads](https://static.pepy.tech/badge/kennard-stone)](https://pepy.tech/project/kennard-stone)
 
 [![Test on each version](https://github.com/yu9824/kennard_stone/actions/workflows/pytest-on-each-version.yaml/badge.svg)](https://github.com/yu9824/kennard_stone/actions/workflows/pytest-on-each-version.yaml)
+[![docs](https://github.com/yu9824/kennard_stone/actions/workflows/docs.yml/badge.svg)](https://github.com/yu9824/kennard_stone/actions/workflows/docs.yml)
+[![release-pypi](https://github.com/yu9824/kennard_stone/actions/workflows/release-pypi.yml/badge.svg)](https://github.com/yu9824/kennard_stone/actions/workflows/release-pypi.yml)
 
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kennard-stone.svg)](https://anaconda.org/conda-forge/kennard-stone)
 [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/kennard-stone.svg)](https://anaconda.org/conda-forge/kennard-stone)
