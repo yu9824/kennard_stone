@@ -1,0 +1,69 @@
+# https://packaging.python.org/ja/latest/guides/writing-pyproject-toml/
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kennard-stone"
+dynamic = ["version"]
+dependencies = [
+    "numpy >= 1.20.0",
+    "scikit-learn",
+    "typing_extensions >= 4.9.0; python_version < '3.13'",
+]
+requires-python = ">= 3.8"
+authors = [{ name = "yu9824" }]
+maintainers = [{ name = "yu9824" }]
+description = "A method for selecting samples by spreading the training data evenly."
+readme = { file = "README.md", content-type = "text/markdown" }
+license = { file = "LICENSE" }
+keywords = ["kennard_stone", "scikit-learn", "train_test_split", "KFold"]
+# https://pypi.org/classifiers/
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+] # https://pypi.org/classifiers/
+
+[project.optional-dependencies]
+test = ["pytest", "pandas"]
+dev = ["build"]
+optional = ["colorlog", "torch", "torchvision", "torchaudio"]
+example = ["tqdm", "jupyter", "pandas"]
+docs = ["sphinx", "sphinx_rtd_theme", "sphinx-markdown-tables", "recommonmark"]
+gui = ["TkEasyGUI"]
+
+[project.urls]
+Homepage = "https://github.com/yu9824/kennard_stone"
+# Documentation = "https://readthedocs.org"
+PyPI = "https://pypi.org/project/kennard-stone/"
+Source = "https://github.com/yu9824/kennard_stone"
+Tracker = "https://github.com/yu9824/kennard_stone/issues"
+Changelog = "https://github.com/yu9824/kennard_stone/blob/main/CHANGELOG.md"
+
+# [project.scripts]
+# kennard-stone = "kennard_stone.__main__:entrypoint"
+
+# [project.gui-scripts]
+# kennard-stone-gui = "kennard_stone:main_gui"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.dynamic]
+version = { attr = "kennard_stone.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src/"]
+
+[tool.ruff]
+line-length = 79
+indent-width = 4
+
+[tool.ruff.lint]
+unfixable = ["F401"]

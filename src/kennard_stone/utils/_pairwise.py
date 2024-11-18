@@ -1,94 +1,34 @@
-from typing import Optional, Union
-import pkgutil
 import sys
 import warnings
+from typing import Optional, Union
+
+if sys.version_info >= (3, 9):
+    from collections.abc import Callable
+else:
+    from typing import Callable
 
 import numpy as np
-from numpy.typing import ArrayLike
 import sklearn.metrics.pairwise
+from numpy.typing import ArrayLike
 
+from ..logging import get_child_logger
+from ._type_alias import Device, Metrics
+from ._utils import is_installed
 
-class IgnoredArgumentWarning(Warning):
-    """Warning used to ignore an argument."""
-
-    ...
-
-
-def is_installed(name: str) -> bool:
-    """Check if a package is installed.
-    Parameters
-    ----------
-    name : str
-        Name of the package.
-    Returns
-    -------
-    is_installed : bool
-        Whether the package is installed.
-    """
-    return pkgutil.find_loader(name) is not None
-
-
-if is_installed("torch"):
-    import torch
-
-
-if sys.version_info >= (3, 8) or is_installed("typing_extensions"):
-    if sys.version_info >= (3, 8):
-        from typing import Literal
-    else:
-        from typing_extensions import Literal
-
-    METRICS = Literal[
-        "cityblock",
-        "cosine",
-        "euclidean",
-        "l1",
-        "l2",
-        "manhattan",
-        "braycurtis",
-        "canberra",
-        "chebyshev",
-        "correlation",
-        "dice",
-        "hamming",
-        "jaccard",
-        "mahalanobis",
-        "minkowski",
-        "rogerstanimoto",
-        "russellrao",
-        "seuclidean",
-        "sokalmichener",
-        "sokalsneath",
-        "sqeuclidean",
-        "yule",
-    ]
-else:
-    METRICS = str
-
-if sys.version_info >= (3, 8) or is_installed("typing_extensions"):
-    if sys.version_info >= (3, 8):
-        from typing import Literal
-    else:
-        from typing_extensions import Literal
-
-    DEVICE = (
-        Union[torch.device, Literal["cpu", "cuda", "mps"], str]
-        if is_installed("torch")
-        else Literal["cpu"]
-    )
-else:
-    DEVICE = Union[torch.device, str] if is_installed("torch") else str
+_logger = get_child_logger(__name__)
 
 
 def pairwise_distances(
     X: ArrayLike,
     Y: Optional[ArrayLike] = None,
-    metric: METRICS = "euclidean",
+    metric: Union[
+        Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
+    ] = "euclidean",
     n_jobs: Optional[int] = None,
     force_all_finite=True,
-    device: DEVICE = "cpu",
+    device: Device = "cpu",
     verbose: int = 1,
-    **kwds,
+    **kwargs,
 ) -> np.ndarray:
     """Wrapper function for 'sklearn.metrics.pairwise.pairwise_distances' and
     'torch.cdist'.
@@ -133,7 +73,7 @@ def pairwise_distances(
         Array of distances.
     """
     if is_installed("torch"):
-        import torch
+        import torch  # type: ignore
 
         device = torch.device(device)
         available_torch = device.type != "cpu"
@@ -142,12 +82,13 @@ def pairwise_distances(
 
     if available_torch:
         # Convert NumPy array to PyTorch tensor and move it to GPU
-        X_tensor = torch.tensor(X, dtype=torch.float32).to(device)
+        X_tensor = torch.tensor(X, dtype=torch.float32, device=device)
         if Y is not None:
-            Y_tensor = torch.tensor(Y, dtype=torch.float32).to(device)
+            Y_tensor = torch.tensor(Y, dtype=torch.float32, device=device)
         else:
             Y_tensor = X_tensor
 
+        p: Union[int, float, None]
         # Calculate pairwise distances on GPU
         if metric == "manhattan":
             p = 1
@@ -156,7 +97,7 @@ def pairwise_distances(
         elif metric == "chebyshev":
             p = float("inf")
         elif metric == "minowski":
-            p = kwds.get("p", 2)
+            p = kwargs.get("p", 2)
         else:
             p = None
             warnings.warn(f"{metric} is not supported by PyTorch. ")
@@ -165,7 +106,7 @@ def pairwise_distances(
 
     if p is None:
         if verbose > 0:
-            sys.stdout.write(
+            _logger.info(
                 "Calculating pairwise distances using scikit-learn.\n"
             )
         return sklearn.metrics.pairwise.pairwise_distances(
@@ -174,26 +115,14 @@ def pairwise_distances(
             metric=metric,
             n_jobs=n_jobs,
             force_all_finite=force_all_finite,
-            **kwds,
+            **kwargs,
         )
     else:
         if verbose > 0:
-            sys.stdout.write(
-                "Calculating pairwise distances using PyTorch"
-                f" on '{device.type}'.\n"
+            _logger.info(
+                f"Calculating pairwise distances using PyTorch on '{device}'."
             )
         disntace_tensor = torch.cdist(X_tensor, Y_tensor, p=p)
         if torch.allclose(X_tensor, Y_tensor):
             disntace_tensor = disntace_tensor.fill_diagonal_(0)
         return disntace_tensor.cpu().numpy()
-
-
-if __name__ == "__main__":
-    import numpy as np
-
-    print(
-        np.allclose(
-            pairwise_distances([[1, 2], [3, 4]], device="mps"),
-            pairwise_distances([[1, 2], [3, 4]], device="cpu"),
-        )
-    )

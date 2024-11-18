@@ -2,33 +2,36 @@
 Copyright © 2021 yu9824
 """
 
-from typing import overload, Union, Optional, TypeVar
+from __future__ import annotations
 
-# The fllowing has deprecated in Python >= 3.9
-from typing import List, Set, Generator, Callable
-
-from itertools import chain
+import sys
 import warnings
+from array import array
+from itertools import chain
+from typing import Any, Optional, TypeVar, Union, overload
+
+if sys.version_info >= (3, 9):
+    from collections.abc import Callable, Generator
+else:
+    from typing import Callable, Generator
+
 
 import numpy as np
 from numpy.typing import ArrayLike
-from sklearn.model_selection._split import BaseShuffleSplit
-from sklearn.model_selection._split import _BaseKFold
-from sklearn.model_selection._split import _validate_shuffle_split
-from sklearn.utils.validation import _num_samples
-from sklearn.utils import indexable
-from sklearn.utils import _safe_indexing
-from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import VarianceThreshold
-from sklearn.utils import check_array
+from sklearn.model_selection._split import (
+    BaseShuffleSplit,
+    _BaseKFold,
+    _validate_shuffle_split,
+)
+from sklearn.preprocessing import StandardScaler
+from sklearn.utils import _safe_indexing, check_array, indexable
+from sklearn.utils.validation import _num_samples
 
-# from sklearn.metrics.pairwise import pairwise_distances
-
-from kennard_stone.utils import (
+from ..utils._pairwise import pairwise_distances
+from ..utils._type_alias import Device, Metrics
+from ..utils._utils import (
     IgnoredArgumentWarning,
-    METRICS,
-    DEVICE,
-    pairwise_distances,
 )
 
 # for typing
@@ -38,30 +41,17 @@ T = TypeVar("T")
 
 
 class KFold(_BaseKFold):
-    @overload
     def __init__(
         self,
         n_splits: int = 5,
         *,
         metric: Union[
-            METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+            Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
         ] = "euclidean",
         n_jobs: Optional[int] = None,
-        device: DEVICE = "cpu",
-    ) -> None:
-        ...
-
-    def __init__(
-        self,
-        n_splits: int = 5,
-        *,
-        metric: Union[
-            METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
-        ] = "euclidean",
-        n_jobs: Optional[int] = None,
-        device: DEVICE = "cpu",
-        random_state: None = None,
+        device: Device = "cpu",
         shuffle: None = None,
+        random_state: None = None,
     ) -> None:
         """K-Folds cross-validator using the Kennard-Stone algorithm.
 
@@ -70,7 +60,7 @@ class KFold(_BaseKFold):
         n_splits : int, optional
             Number of folds. Must be at least 2., by default 5
 
-        metric : Union[METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+        metric : Union[Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
             , optional
 
             The distance metric to use. See the documentation of
@@ -141,7 +131,7 @@ class KFold(_BaseKFold):
 
     def _iter_test_indices(
         self, X=None, y=None, groups=None
-    ) -> Generator[List[int], None, None]:
+    ) -> Generator[array[int], None, None]:
         ks = _KennardStone(
             n_groups=self.get_n_splits(),
             scale=True,
@@ -163,10 +153,10 @@ class KSSplit(BaseShuffleSplit):
         test_size: Optional[Union[float, int]] = None,
         train_size: Optional[Union[float, int]] = None,
         metric: Union[
-            METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+            Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
         ] = "euclidean",
         n_jobs: Optional[int] = None,
-        device: DEVICE = "cpu",
+        device: Device = "cpu",
     ):
         super().__init__(
             n_splits=n_splits, test_size=test_size, train_size=train_size
@@ -179,7 +169,9 @@ class KSSplit(BaseShuffleSplit):
         self._default_test_size = 0.1
 
     # overwrap abstractmethod
-    def _iter_indices(self, X, y=None, groups=None):
+    def _iter_indices(
+        self, X, y=None, groups=None
+    ) -> Generator[tuple[list[int], list[int]], None, None]:
         ks = _KennardStone(
             n_groups=1,
             scale=True,
@@ -200,7 +192,7 @@ class KSSplit(BaseShuffleSplit):
         for _ in range(self.get_n_splits()):
             ind_test = indexes[:n_test]
             ind_train = indexes[n_test : (n_test + n_train)]  # noqa: E203
-            yield ind_train, ind_test
+            yield ind_train.tolist(), ind_test.tolist()
 
 
 @overload
@@ -209,12 +201,11 @@ def train_test_split(
     test_size: Optional[Union[float, int]] = None,
     train_size: Optional[Union[float, int]] = None,
     metric: Union[
-        METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+        Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
     ] = "euclidean",
     n_jobs: Optional[int] = None,
-    device: DEVICE = "cpu",
-) -> List[T]:
-    ...
+    device: Device = "cpu",
+) -> list[T]: ...
 
 
 def train_test_split(
@@ -222,13 +213,13 @@ def train_test_split(
     test_size: Optional[Union[float, int]] = None,
     train_size: Optional[Union[float, int]] = None,
     metric: Union[
-        METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+        Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
     ] = "euclidean",
     n_jobs: Optional[int] = None,
-    device: DEVICE = "cpu",
+    device: Device = "cpu",
     random_state: None = None,
     shuffle: None = None,
-) -> List[T]:
+) -> list[T]:
     """Split arrays or matrices into train and test subsets using the
     Kennard-Stone algorithm.
 
@@ -254,7 +245,7 @@ def train_test_split(
         absolute number of train samples. If None, the value is automatically
         set to the complement of the test size., by default None
 
-    metric : Union[METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]]
+    metric : Union[Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]]
         , optional
 
         The distance metric to use. See the documentation of
@@ -336,8 +327,7 @@ def train_test_split(
         n_samples, test_size, train_size, default_test_size=0.25
     )
 
-    CVClass = KSSplit
-    cv = CVClass(
+    cv = KSSplit(
         test_size=n_test,
         train_size=n_train,
         metric=metric,
@@ -360,10 +350,10 @@ class _KennardStone:
         n_groups: int = 1,
         scale: bool = True,
         metric: Union[
-            METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]
+            Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
         ] = "euclidean",
         n_jobs: Optional[int] = None,
-        device: DEVICE = "cpu",
+        device: Device = "cpu",
     ) -> None:
         """The root program of the Kennard-Stone algorithm,
         an algorithm for evenly partitioning data.
@@ -376,7 +366,7 @@ class _KennardStone:
         scale : bool, optional
             scaling X or not, by default True
 
-        metric : Union[METRICS, Callable[[ArrayLike, ArrayLike], np.ndarray]]
+        metric : Union[Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]]
             , optional
 
             The distance metric to use. See the documentation of
@@ -422,7 +412,7 @@ class _KennardStone:
         self.n_jobs = n_jobs
         self.device = device
 
-    def get_indexes(self, X: ArrayLike) -> List[List[int]]:
+    def get_indexes(self, X: ArrayLike) -> list[array[int]]:
         """Sort indexes by the Kennard-Stone algorithm.
 
         Parameters
@@ -432,11 +422,11 @@ class _KennardStone:
 
         Returns
         -------
-        List[List[int]]
+        list[array[int]]
             The sorted indexes.
         """
         # check input array
-        X: np.ndarray = check_array(
+        X_checked: np.ndarray = check_array(
             X,
             ensure_2d=True,
             dtype="numeric",
@@ -444,37 +434,40 @@ class _KennardStone:
             if self.metric == "nan_euclidean"
             else True,
         )
-        n_samples = X.shape[0]
+        n_samples = X_checked.shape[0]
 
         # drop no variance
         vselector = VarianceThreshold(threshold=0.0)
-        X = vselector.fit_transform(X)
+        X_checked = vselector.fit_transform(X_checked)
 
         if self.scale:
             scaler = StandardScaler()
-            X = scaler.fit_transform(X)
+            X_checked = scaler.fit_transform(X_checked)
 
-        # Save the original X.
-        # self._original_X = X.copy()
+        # Save the original X_checked.
+        # self._original_X = X_checked.copy()
 
         # Pre-calculate the distance matrix.
         self.distance_matrix = pairwise_distances(
-            X, metric=self.metric, n_jobs=self.n_jobs, device=self.device
+            X_checked,
+            metric=self.metric,
+            n_jobs=self.n_jobs,
+            device=self.device,
         )
 
         # 全ての組成に対してそれぞれの平均との距離の二乗を配列として得る． (サンプル数の分だけ存在)
-        # distance_to_ave = np.sum(np.square(X - X.mean(axis=0)), axis=1)
-        kwargs_pairwise_distances = dict()
+        # distance_to_ave = np.sum(np.square(X_checked - X_checked.mean(axis=0)), axis=1)
+        kwargs_pairwise_distances: dict[str, Any] = dict()
         if self.metric == "mahalanobis":
             kwargs_pairwise_distances["VI"] = np.linalg.inv(
-                np.cov(X, rowvar=False)
+                np.cov(X_checked, rowvar=False)
             )
         elif self.metric == "seuclidean":
-            kwargs_pairwise_distances["V"] = np.var(X, axis=0, ddof=1)
+            kwargs_pairwise_distances["V"] = np.var(X_checked, axis=0, ddof=1)
 
         distance_to_ave = pairwise_distances(
-            X,
-            X.mean(axis=0, keepdims=True),
+            X_checked,
+            X_checked.mean(axis=0, keepdims=True),
             metric=self.metric,
             n_jobs=self.n_jobs,
             device=self.device,
@@ -482,23 +475,25 @@ class _KennardStone:
         ).ravel()
 
         # 最大値を取るサンプル (平均からの距離が一番遠い) のindex_numberを保存
-        idx_farthest: List[int] = np.argsort(distance_to_ave)[::-1][
-            : self.n_groups
-        ].tolist()
+        idx_farthest: array[int] = array(
+            "i", np.argsort(distance_to_ave)[::-1][: self.n_groups].tolist()
+        )
 
         distance_min = self.distance_matrix[idx_farthest, :]
 
         # params
         indexes_selected = idx_farthest
-        lst_indexes_selected_prev = [[] for _ in range(self.n_groups)]
-        indexes_remaining_prev = list(range(n_samples))
+        lst_indexes_selected_prev: list[array[int]] = [
+            array("L") for _ in range(self.n_groups)
+        ]
+        indexes_remaining_prev = array("L", range(n_samples))
 
         for _ in range(
             n_samples // self.n_groups + bool(n_samples % self.n_groups) - 1
         ):
             # collect the current indexes
-            indexes_remaining: List[int] = list()
-            arg_selected: List[int] = list()
+            indexes_remaining: array[int] = array("L")
+            arg_selected: array[int] = array("L")
             for j, idx in enumerate(indexes_remaining_prev):
                 if idx in set(indexes_selected):
                     arg_selected.append(j)
@@ -507,7 +502,7 @@ class _KennardStone:
             n_remaining = len(indexes_remaining)
 
             lst_indexes_selected = [
-                indexes_selected_prev + [index_selected]
+                indexes_selected_prev + array("L", (index_selected,))
                 for indexes_selected_prev, index_selected in zip(
                     lst_indexes_selected_prev, indexes_selected
                 )
@@ -520,7 +515,7 @@ class _KennardStone:
             ]
             distance_min = np.delete(distance_min, arg_selected, axis=1)
 
-            distance_min: np.ndarray = np.min(
+            distance_min = np.min(
                 np.concatenate(
                     [
                         distance_selected.reshape(self.n_groups, 1, -1),
@@ -534,16 +529,19 @@ class _KennardStone:
             # まだ選択されていない各サンプルにおいて、これまで選択されたすべてのサンプルとの間で
             # ユークリッド距離を計算し，その最小の値を「代表長さ」とする．
 
-            _st_arg_delete: Set[int] = set()
-            indexes_selected_next: List[int] = list()
+            _st_arg_delete: set[int] = set()
+            indexes_selected_next: array[int] = array("L")
             for k in range(self.n_groups):
                 if k == 0:
                     arg_delete = np.argmax(
                         distance_min[k],
-                    )
+                    ).item()
                 elif 0 < n_remaining - k:
-                    sorted_args = np.argsort(
-                        distance_min[k],
+                    sorted_args = array(
+                        "L",
+                        np.argsort(
+                            distance_min[k],
+                        ).tolist(),
                     )
                     # 最大値を取るサンプル (代表長さが最も大きい) のindex_numberを保存
                     for j in range(n_remaining - k, -1, -1):
@@ -563,13 +561,14 @@ class _KennardStone:
             indexes_remaining_prev = indexes_remaining
         else:  # もうないなら遠い順から近い順 (test側) に並べ替えて終える
             assert n_remaining - len(indexes_selected_next) <= 0
-            indexes_output: List[List[int]] = []
+            indexes_output: list[array[int]] = []
             for k in range(self.n_groups):
                 indexes_selected_reversed = lst_indexes_selected[k][::-1]
                 if k < len(indexes_selected_next):
                     index_selected_next = indexes_selected_next[k]
                     indexes_output.append(
-                        [index_selected_next] + indexes_selected_reversed
+                        array("L", (index_selected_next,))
+                        + indexes_selected_reversed
                     )
                 else:
                     indexes_output.append(indexes_selected_reversed)
