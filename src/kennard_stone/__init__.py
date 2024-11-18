@@ -7,7 +7,7 @@ Copyright © 2021 yu9824
 
 from ._core._core import KFold, train_test_split
 
-__version__ = "2.2.2dev0"
+__version__ = "3.0.0rc0"
 __license__ = "MIT"
 __author__ = "yu9824"
 __copyright__ = "Copyright © 2021 yu9824"
