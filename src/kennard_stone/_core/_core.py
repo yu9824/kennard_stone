@@ -8,7 +8,7 @@ import sys
 import warnings
 from array import array
 from itertools import chain
-from typing import Any, Optional, TypeVar, Union, overload
+from typing import Any, Optional, TypeVar, Union
 
 if sys.version_info >= (3, 9):
     from collections.abc import Callable, Generator
@@ -55,60 +55,31 @@ class KFold(_BaseKFold):
         shuffle: None = None,
         random_state: None = None,
     ) -> None:
-        """K-Folds cross-validator using the Kennard-Stone algorithm.
+        """Kennard–Stone based K-Fold cross-validator.
 
         Parameters
         ----------
-        n_splits : int, optional
-            Number of folds. Must be at least 2., by default 5
+        n_splits : int, default=5
+            Number of folds. Must be at least 2.
 
-        metric : Union[Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
-            , optional
+        metric : {Metrics, callable}, default="euclidean"
+            Distance metric. Either a metric name accepted by
+            ``sklearn.metrics.pairwise_distances`` /
+            ``scipy.spatial.distance.pdist`` or a callable returning an
+            ``ndarray``. With GPU ('euclidean', 'manhattan', 'chebyshev',
+            'minkowski'), ``torch.cdist`` is used.
 
-            The distance metric to use. See the documentation of
-            - `scipy.spatial.distance.pdist`
-                https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html
-            - `sklearn.metrics.pairwise_distances`
-                https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html
+        n_jobs : int, default=None
+            Number of parallel jobs (CPU only).
 
-            for valid values.
-            , by default "euclidean"
-
-            Valid values for metric are:
-
-            - From scikit-learn: ['cityblock', 'cosine', 'euclidean', 'l1',
-                'l2', 'manhattan']. These metrics support sparse matrix inputs.
-                ['nan_euclidean'] but it does not yet support sparse matrices.
-            - From scipy.spatial.distance: ['braycurtis', 'canberra',
-                'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
-                'mahalanobis', 'minkowski', 'rogerstanimoto',
-                'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
-                'sqeuclidean', 'yule'] See the documentation for
-                scipy.spatial.distance for details on these metrics.
-                These metrics do not support sparse matrix inputs.
-
-            If you want to use GPU when calculating the distance matrix
-            ('euclidean', 'manhattan', 'chebyshev' and 'minkowski'),
-            you need to install 'pytorch' and set `device` to 'cuda' or 'mps'.
-
-        n_jobs : int, optional
-            The number of parallel jobs. It is valid only when CPU is used.
-            , by default None
-
-        device : Literal['cpu', 'cuda', 'mps'] or torch.device or str, optional
-            , by default 'cpu'
-
-            If you want to use GPU when calculating the distance matrix
-            ('euclidean', 'manhattan', 'chebyshev' and 'minkowski'),
-            you need to install 'pytorch' and set `device` to 'cuda' or 'mps'.
+        device : {"cpu", "cuda", "mps"} or torch.device or str, default="cpu"
+            Device for distance matrix computation.
 
         random_state : None, deprecated
-            This parameter is deprecated and has no effect
-            because the algorithm is deterministic.
+            No effect (algorithm is deterministic).
 
         shuffle : None, deprecated
-            This parameter is deprecated and has no effect
-            because the algorithm is deterministic.
+            No effect (algorithm is deterministic).
         """
         super().__init__(n_splits=n_splits, shuffle=False, random_state=None)
         self.metric = metric
@@ -160,6 +131,21 @@ class KSSplit(BaseShuffleSplit):
         n_jobs: Optional[int] = None,
         device: Device = "cpu",
     ):
+        """Splitting helper for train/test based on Kennard–Stone.
+
+        Parameters
+        ----------
+        n_splits : int, default=1
+            Must be 1 for this class.
+
+        test_size : float or int, default=None
+            Same semantics as ``sklearn.model_selection.train_test_split``.
+
+        train_size : float or int, default=None
+            Same semantics as ``sklearn.model_selection.train_test_split``.
+
+        metric, n_jobs, device : see also ``KFold``
+        """
         super().__init__(
             n_splits=n_splits, test_size=test_size, train_size=train_size
         )
@@ -174,6 +160,7 @@ class KSSplit(BaseShuffleSplit):
     def _iter_indices(
         self, X, y=None, groups=None
     ) -> Generator[tuple[list[int], list[int]], None, None]:
+        """Internal generator. Yields train/test indices."""
         ks = _KennardStone(
             n_groups=1,
             scale=True,
@@ -209,87 +196,39 @@ def train_test_split(
     random_state: None = None,
     shuffle: None = None,
 ) -> list[T]:
-    """Split arrays or matrices into train and test subsets using the
-    Kennard-Stone algorithm.
+    """Split arrays or matrices into train and test subsets via Kennard–Stone.
 
-    Data partitioning by the Kennard-Stone algorithm is performed based on the
-    first element to be input.
+    The first input array determines the geometric order of indices so that the
+    split is as uniform as possible. All subsequent arrays are split using the
+    same indices.
 
     Parameters
     ----------
-    *arrays: sequence of indexables with same length / shape[0]
-        Allowed inputs are lists, numpy arrays, scipy-sparse
-        matrices or pandas dataframes.
+    *arrays : sequence of indexables
+        Arrays of equal length (list, ndarray, scipy-sparse, pandas DataFrame, etc.).
 
-    test_size : float or int, optional
-        If float, should be between 0.0 and 1.0 and represent the proportion
-        of the dataset to include in the test split. If int, represents the
-        absolute number of test samples. If None, the value is set to the
-        complement of the train size. If train_size is also None, it will be
-        set to 0.25., by default None
+    test_size : float or int, default=None
+        Proportion in [0.0, 1.0] or absolute count. If ``None``, it becomes the
+        complement of ``train_size``. If both are ``None``, defaults to 0.25.
 
-    train_size : float or int, optional
-        If float, should be between 0.0 and 1.0 and represent the proportion
-        of the dataset to include in the train split. If int, represents the
-        absolute number of train samples. If None, the value is automatically
-        set to the complement of the test size., by default None
+    train_size : float or int, default=None
+        Proportion or absolute count for the train split. If ``None``, becomes
+        the complement of ``test_size``.
 
-    metric : Union[Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]]
-        , optional
+    metric, n_jobs, device : see also ``KFold``
 
-        The distance metric to use. See the documentation of
-        - `scipy.spatial.distance.pdist`
-            https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html
-        - `sklearn.metrics.pairwise_distances`
-            https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html
-
-        for valid values.
-        , by default "euclidean"
-
-        Valid values for metric are:
-
-        - From scikit-learn: ['cityblock', 'cosine', 'euclidean', 'l1',
-            'l2', 'manhattan']. These metrics support sparse matrix inputs.
-            ['nan_euclidean'] but it does not yet support sparse matrices.
-        - From scipy.spatial.distance: ['braycurtis', 'canberra',
-            'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
-            'mahalanobis', 'minkowski', 'rogerstanimoto',
-            'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
-            'sqeuclidean', 'yule'] See the documentation for
-            scipy.spatial.distance for details on these metrics.
-            These metrics do not support sparse matrix inputs.
-
-        If you want to use GPU when calculating the distance matrix
-        ('euclidean', 'manhattan', 'chebyshev' and 'minkowski'),
-        you need to install 'pytorch' and set `device` to 'cuda' or 'mps'.
-
-    n_jobs : int, optional
-        The number of parallel jobs. It is valid only when CPU is used.
-        , by default None
-
-    device : Literal['cpu', 'cuda', 'mps'] or torch.device or str, optional
-        , by default 'cpu'
-
-        If you want to use GPU when calculating the distance matrix
-        ('euclidean', 'manhattan', 'chebyshev' and 'minkowski'),
-        you need to install 'pytorch' and set `device` to 'cuda' or 'mps'.
-
-    random_state : None, deprecated
-        This parameter is deprecated and has no effect
-        because the algorithm is deterministic.
-
-    shuffle : None, deprecated
-        This parameter is deprecated and has no effect
-        because the algorithm is deterministic.
+    random_state, shuffle : None, deprecated
+        No effect (algorithm is deterministic).
 
     Returns
     -------
-    splitting : list, length=2 * len(arrays)
-        List containing train-test split of inputs
+    list
+        A list like ``[X_train, X_test, y_train, y_test, ...]``.
 
     Raises
     ------
     ValueError
+        If no input arrays are provided.
     """
     if shuffle is not None:
         warnings.warn(
@@ -344,56 +283,17 @@ class _KennardStone:
         n_jobs: Optional[int] = None,
         device: Device = "cpu",
     ) -> None:
-        """The root program of the Kennard-Stone algorithm,
-        an algorithm for evenly partitioning data.
+        """Internal class implementing the core of the Kennard–Stone algorithm.
 
         Parameters
         ----------
-        n_groups : int, optional
-            how many groups to divide, by default 1
+        n_groups : int, default=1
+            Number of groups to split into.
 
-        scale : bool, optional
-            scaling X or not, by default True
+        scale : bool, default=True
+            Whether to standardize features before computing distances.
 
-        metric : Union[Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]]
-            , optional
-
-            The distance metric to use. See the documentation of
-            - `scipy.spatial.distance.pdist`
-                https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html
-            - `sklearn.metrics.pairwise_distances`
-                https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html
-
-            for valid values.
-            , by default "euclidean"
-
-            Valid values for metric are:
-
-            - From scikit-learn: ['cityblock', 'cosine', 'euclidean', 'l1',
-                'l2', 'manhattan']. These metrics support sparse matrix inputs.
-                ['nan_euclidean'] but it does not yet support sparse matrices.
-            - From scipy.spatial.distance: ['braycurtis', 'canberra',
-                'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
-                'mahalanobis', 'minkowski', 'rogerstanimoto',
-                'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
-                'sqeuclidean', 'yule'] See the documentation for
-                scipy.spatial.distance for details on these metrics.
-                These metrics do not support sparse matrix inputs.
-
-            If you want to use GPU when calculating the distance matrix
-            ('euclidean', 'manhattan', 'chebyshev' and 'minkowski'),
-            you need to install 'pytorch' and set `device` to 'cuda' or 'mps'.
-
-        n_jobs : int, optional
-            The number of parallel jobs. It is valid only when CPU is used.
-            , by default None
-
-        device : Literal['cpu', 'cuda', 'mps'] or torch.device or str, optional
-            , by default 'cpu'
-
-            If you want to use GPU when calculating the distance matrix
-            ('euclidean', 'manhattan', 'chebyshev' and 'minkowski'),
-            you need to install 'pytorch' and set `device` to 'cuda' or 'mps'.
+        metric, n_jobs, device : see also ``KFold``
         """
         self.n_groups = n_groups
         self.scale = scale
@@ -402,17 +302,17 @@ class _KennardStone:
         self.device = device
 
     def get_indexes(self, X: ArrayLike) -> list[array[int]]:
-        """Sort indexes by the Kennard-Stone algorithm.
+        """Compute index sequences using the Kennard–Stone procedure.
 
         Parameters
         ----------
         X : ArrayLike
-            The data to be sorted.
+            2D array of shape (n_samples, n_features).
 
         Returns
         -------
         list[array[int]]
-            The sorted indexes.
+            A list of index arrays corresponding to each group.
         """
         # check input array
         # scikit-learn 1.6+ deprecates 'force_all_finite' and 1.8 renames to
