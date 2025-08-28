@@ -1,4 +1,4 @@
-name: Publish Python 🐍 distribution 📦 to PyPI and TestPyPI
+name: Publish Python 🐍 distribution 📦
 run-name: ${{ github.workflow }} (${{ github.ref_name }})
 
 on:
@@ -6,7 +6,8 @@ on:
   # FIXME: uncomment
   push:
     tags:
-    - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
 
 jobs:
   build:
@@ -31,7 +32,8 @@ jobs:
   publish-to-pypi:
     name: >-
       Publish Python 🐍 distribution 📦 to PyPI
-    if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
+    # Only publish to PyPI on tag pushes with version tags or release candidates
+    if: startsWith(github.ref, 'refs/tags/') && (!contains(github.ref_name, '-') || contains(github.ref_name, 'rc'))
     needs:
     - build
     runs-on: ubuntu-latest
@@ -53,7 +55,8 @@ jobs:
     name: >-
       Sign the Python 🐍 distribution 📦 with Sigstore
       and upload them to GitHub Release
-    if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
+    # only publish to PyPI on tag pushes
+    if: startsWith(github.ref, 'refs/tags/')
     needs:
     - build
     runs-on: ubuntu-latest
@@ -69,11 +72,19 @@ jobs:
         name: python-package-distributions
         path: dist/
     - name: Sign the dists with Sigstore
-      uses: sigstore/gh-action-sigstore-python@v2.1.1
+      uses: sigstore/gh-action-sigstore-python@v3.0.0
       with:
         inputs: >-
           ./dist/*.tar.gz
           ./dist/*.whl
+    - name: Determine if pre-release
+      id: prerelease
+      run: |
+        if [[ "${GITHUB_REF#refs/tags/}" == *-* ]]; then
+          echo "pre_release=true" >> $GITHUB_OUTPUT
+        else
+          echo "pre_release=false" >> $GITHUB_OUTPUT
+        fi
     - name: Create GitHub Release
       env:
         GITHUB_TOKEN: ${{ github.token }}
@@ -82,6 +93,7 @@ jobs:
         '${{ github.ref_name }}'
         --repo '${{ github.repository }}'
         --generate-notes
+        --prerelease=${{ steps.prerelease.outputs.pre_release }}
     - name: Upload artifact signatures to GitHub Release
       env:
         GITHUB_TOKEN: ${{ github.token }}
