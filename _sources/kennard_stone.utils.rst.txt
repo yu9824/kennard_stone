@@ -1,0 +1,7 @@
+kennard\_stone.utils package
+============================
+
+.. automodule:: kennard_stone.utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
