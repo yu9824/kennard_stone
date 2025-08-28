@@ -16,6 +16,8 @@ else:
     from typing import Callable, Generator
 
 
+from inspect import signature
+
 import numpy as np
 from numpy.typing import ArrayLike
 from sklearn.feature_selection import VarianceThreshold
@@ -193,19 +195,6 @@ class KSSplit(BaseShuffleSplit):
             ind_test = indexes[:n_test]
             ind_train = indexes[n_test : (n_test + n_train)]  # noqa: E203
             yield ind_train.tolist(), ind_test.tolist()
-
-
-@overload
-def train_test_split(
-    *arrays: T,
-    test_size: Optional[Union[float, int]] = None,
-    train_size: Optional[Union[float, int]] = None,
-    metric: Union[
-        Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
-    ] = "euclidean",
-    n_jobs: Optional[int] = None,
-    device: Device = "cpu",
-) -> list[T]: ...
 
 
 def train_test_split(
@@ -426,14 +415,42 @@ class _KennardStone:
             The sorted indexes.
         """
         # check input array
-        X_checked: np.ndarray = check_array(
-            X,
+        # scikit-learn 1.6+ deprecates 'force_all_finite' and 1.8 renames to
+        # 'ensure_all_finite'. Check the signature dynamically.
+        check_array_sig = signature(check_array)
+        supports_ensure_all_finite = (
+            "ensure_all_finite" in check_array_sig.parameters
+        )
+        supports_force_all_finite = (
+            "force_all_finite" in check_array_sig.parameters
+        )
+
+        check_kwargs: dict[str, Any] = dict(
             ensure_2d=True,
             dtype="numeric",
-            force_all_finite="allow-nan"
-            if self.metric == "nan_euclidean"
-            else True,
         )
+        if supports_ensure_all_finite:
+            check_kwargs["ensure_all_finite"] = (
+                "allow-nan" if self.metric == "nan_euclidean" else True
+            )
+        elif supports_force_all_finite:
+            check_kwargs["force_all_finite"] = (
+                "allow-nan" if self.metric == "nan_euclidean" else True
+            )
+
+        try:
+            X_checked: np.ndarray = check_array(
+                X,
+                **check_kwargs,
+            )
+        except TypeError:
+            # Fallback when the argument is not accepted at runtime
+            check_kwargs.pop("ensure_all_finite", None)
+            check_kwargs.pop("force_all_finite", None)
+            X_checked = check_array(
+                X,
+                **check_kwargs,
+            )
         n_samples = X_checked.shape[0]
 
         # drop no variance
