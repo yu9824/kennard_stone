@@ -1,3 +1,15 @@
+"""Type aliases used across the package.
+
+This module defines ``Device`` for GPU/CPU device specification and
+``Metrics`` as a literal set of metric names that can be used for distance
+computation.
+
+Notes
+-----
+Representative public types referenced by the API are centralized here for
+clear Sphinx rendering.
+"""
+
 import sys
 from typing import Literal, Union
 

@@ -33,51 +33,41 @@ def pairwise_distances(
     verbose: int = 1,
     **kwargs,
 ) -> np.ndarray:
-    """Wrapper function for 'sklearn.metrics.pairwise.pairwise_distances' and
-    'torch.cdist'.
+    """Compute the pairwise distance matrix between two point sets.
 
-    This function is used to calculate pairwise distances
-    between two sets of points.
+    Wraps scikit-learn's ``pairwise_distances`` and PyTorch's ``torch.cdist``
+    and chooses an implementation depending on the environment and device.
 
     Parameters
     ----------
     X : array-like of shape (n_samples_1, n_features)
-        Array of points.
+        First set of points.
 
     Y : array-like of shape (n_samples_2, n_features), default=None
-        Array of points. If None, the distance between X and itself is
-        calculated.
+        Second set of points. If ``None``, distances within ``X`` are
+        computed.
 
     metric : str or callable, default="euclidean"
-        The metric to use when calculating distance between instances
-        in a feature array.
-
-        If metric is a string, it must be one of the options allowed by
-        sklearn.metrics.pairwise.pairwise_distances.
-
-        if you want to use PyTorch's distance function, you can use
-        'manhattan', 'euclidean', 'chebyshev', 'minowski' as a metric.
+        Distance metric. If a string, it must be accepted by scikit-learn.
+        With PyTorch, you can use 'manhattan', 'euclidean', 'chebyshev',
+        or 'minowski'.
 
     n_jobs : int, default=None
-        The number of jobs to use for the computation. This works by breaking
-        down the pairwise matrix into n_jobs even slices and computing them in
-        parallel. (Note: 'n_jobs' is not supported by PyTorch.)
+        Number of parallel jobs (effective with scikit-learn only).
 
     ensure_all_finite : bool, default=True
-        Whether to raise an error on np.inf and np.nan in X.
+        Whether to raise on inf/NaN.
 
     force_all_finite : Optional[bool], default=None
-        Deprecated alias of 'ensure_all_finite'. If provided, a warning is
-        emitted and its value overrides 'ensure_all_finite'.
+        Deprecated alias of ``ensure_all_finite``. If provided, overrides it.
 
-    device : Literal['cpu', 'cuda', 'mps'] or torch.device or str
-    , default="cpu"
-        Device to use for calculating pairwise distances.
+    device : {"cpu", "cuda", "mps"} or torch.device or str, default="cpu"
+        Device to use for computation.
 
     Returns
     -------
-    distance_X : ndarray of shape (n_samples_1, n_samples_2)
-        Array of distances.
+    ndarray of shape (n_samples_1, n_samples_2)
+        Distance matrix.
     """
     if is_installed("torch"):
         import torch  # type: ignore
