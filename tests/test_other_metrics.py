@@ -1,4 +1,10 @@
+import scipy.spatial.distance
+
 from kennard_stone import train_test_split
+
+# Metrics removed from SciPy (and hence from scikit-learn's valid metrics).
+# 'sokalmichener': deprecated in SciPy 1.15, removed in SciPy 1.17.
+METRICS_REMOVED_FROM_SCIPY = ("sokalmichener",)
 
 
 def test_train_test_split(prepare_data):
@@ -30,4 +36,8 @@ def test_train_test_split(prepare_data):
     )
 
     for metric in METRICS:
+        if metric in METRICS_REMOVED_FROM_SCIPY and not hasattr(
+            scipy.spatial.distance, metric
+        ):
+            continue
         train_test_split(X, y, test_size=0.2, metric=metric, n_jobs=-1)
