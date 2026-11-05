@@ -50,7 +50,7 @@ def pairwise_distances(
     metric : str or callable, default="euclidean"
         Distance metric. If a string, it must be accepted by scikit-learn.
         With PyTorch, you can use 'manhattan', 'euclidean', 'chebyshev',
-        or 'minowski'.
+        or 'minkowski'.
 
     n_jobs : int, default=None
         Number of parallel jobs (effective with scikit-learn only).
@@ -101,7 +101,7 @@ def pairwise_distances(
             p = 2
         elif metric == "chebyshev":
             p = float("inf")
-        elif metric == "minowski":
+        elif metric == "minkowski":
             p = kwargs.get("p", 2)
         else:
             p = None
