@@ -8,7 +8,7 @@ name = "kennard-stone"
 dynamic = ["version"]
 dependencies = [
     "numpy >= 1.20.0",
-    "scikit-learn",
+    "scikit-learn < 1.9",
     "typing_extensions >= 4.9.0; python_version < '3.13'",
 ]
 requires-python = ">= 3.8"
