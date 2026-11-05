@@ -81,7 +81,8 @@ def pairwise_distances(
     if force_all_finite is not None:
         warnings.warn(
             "'force_all_finite' is deprecated. Use 'ensure_all_finite' instead.",
-            DeprecationWarning,
+            FutureWarning,
+            stacklevel=2,
         )
         ensure_all_finite = force_all_finite
 
