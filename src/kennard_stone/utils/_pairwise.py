@@ -1,12 +1,6 @@
-import sys
+from __future__ import annotations
+
 import warnings
-from typing import Optional, Union
-
-if sys.version_info >= (3, 9):
-    from collections.abc import Callable
-else:
-    from typing import Callable
-
 from inspect import signature
 
 import numpy as np
@@ -14,7 +8,7 @@ import sklearn.metrics.pairwise
 from numpy.typing import ArrayLike
 
 from ..logging import get_child_logger
-from ._type_alias import Device, Metrics
+from ._type_alias import Device, MetricLike
 from ._utils import is_installed
 
 _logger = get_child_logger(__name__)
@@ -22,13 +16,11 @@ _logger = get_child_logger(__name__)
 
 def pairwise_distances(
     X: ArrayLike,
-    Y: Optional[ArrayLike] = None,
-    metric: Union[
-        Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
-    ] = "euclidean",
-    n_jobs: Optional[int] = None,
+    Y: ArrayLike | None = None,
+    metric: MetricLike = "euclidean",
+    n_jobs: int | None = None,
     ensure_all_finite: bool = True,
-    force_all_finite: Optional[bool] = None,
+    force_all_finite: bool | None = None,
     device: Device = "cpu",
     verbose: int = 1,
     **kwargs,
@@ -58,7 +50,7 @@ def pairwise_distances(
     ensure_all_finite : bool, default=True
         Whether to raise on inf/NaN.
 
-    force_all_finite : Optional[bool], default=None
+    force_all_finite : bool | None, default=None
         Deprecated alias of ``ensure_all_finite``. If provided, overrides it.
 
     device : {"cpu", "cuda", "mps"} or torch.device or str, default="cpu"
@@ -94,7 +86,7 @@ def pairwise_distances(
         else:
             Y_tensor = X_tensor
 
-        p: Union[int, float, None]
+        p: int | float | None
         # Calculate pairwise distances on GPU
         if metric == "manhattan":
             p = 1

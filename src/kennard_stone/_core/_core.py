@@ -4,19 +4,12 @@ Copyright © 2021 yu9824
 
 from __future__ import annotations
 
-import sys
 import warnings
 from array import array
-from itertools import chain
-from typing import Any, Optional, TypeVar, Union
-
-if sys.version_info >= (3, 9):
-    from collections.abc import Callable, Generator
-else:
-    from typing import Callable, Generator
-
-
+from collections.abc import Generator
 from inspect import signature
+from itertools import chain
+from typing import Any, TypeVar
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -31,7 +24,7 @@ from sklearn.utils import _safe_indexing, check_array, indexable
 from sklearn.utils.validation import _num_samples
 
 from ..utils._pairwise import pairwise_distances
-from ..utils._type_alias import Device, Metrics
+from ..utils._type_alias import Device, MetricLike
 from ..utils._utils import (
     IgnoredArgumentWarning,
 )
@@ -47,10 +40,8 @@ class KFold(_BaseKFold):
         self,
         n_splits: int = 5,
         *,
-        metric: Union[
-            Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
-        ] = "euclidean",
-        n_jobs: Optional[int] = None,
+        metric: MetricLike = "euclidean",
+        n_jobs: int | None = None,
         device: Device = "cpu",
         shuffle: None = None,
         random_state: None = None,
@@ -123,12 +114,10 @@ class KSSplit(BaseShuffleSplit):
         self,
         n_splits: int = 1,
         *,
-        test_size: Optional[Union[float, int]] = None,
-        train_size: Optional[Union[float, int]] = None,
-        metric: Union[
-            Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
-        ] = "euclidean",
-        n_jobs: Optional[int] = None,
+        test_size: float | int | None = None,
+        train_size: float | int | None = None,
+        metric: MetricLike = "euclidean",
+        n_jobs: int | None = None,
         device: Device = "cpu",
     ):
         """Splitting helper for train/test based on Kennard–Stone.
@@ -186,12 +175,10 @@ class KSSplit(BaseShuffleSplit):
 
 def train_test_split(
     *arrays: T,
-    test_size: Optional[Union[float, int]] = None,
-    train_size: Optional[Union[float, int]] = None,
-    metric: Union[
-        Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
-    ] = "euclidean",
-    n_jobs: Optional[int] = None,
+    test_size: float | int | None = None,
+    train_size: float | int | None = None,
+    metric: MetricLike = "euclidean",
+    n_jobs: int | None = None,
     device: Device = "cpu",
     random_state: None = None,
     shuffle: None = None,
@@ -277,10 +264,8 @@ class _KennardStone:
         self,
         n_groups: int = 1,
         scale: bool = True,
-        metric: Union[
-            Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
-        ] = "euclidean",
-        n_jobs: Optional[int] = None,
+        metric: MetricLike = "euclidean",
+        n_jobs: int | None = None,
         device: Device = "cpu",
     ) -> None:
         """Internal class implementing the core of the Kennard–Stone algorithm.
