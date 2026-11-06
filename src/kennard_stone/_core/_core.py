@@ -43,6 +43,7 @@ class KFold(_BaseKFold):
         metric: MetricLike = "euclidean",
         n_jobs: int | None = None,
         device: Device = "cpu",
+        scale: bool = True,
         shuffle: None = None,
         random_state: None = None,
     ) -> None:
@@ -66,6 +67,11 @@ class KFold(_BaseKFold):
         device : {"cpu", "cuda", "mps"} or torch.device or str, default="cpu"
             Device for distance matrix computation.
 
+        scale : bool, default=True
+            Whether to standardize features (``StandardScaler``) before
+            computing distances. Features with zero variance are always
+            dropped.
+
         random_state : None, deprecated
             No effect (algorithm is deterministic).
 
@@ -76,6 +82,7 @@ class KFold(_BaseKFold):
         self.metric = metric
         self.n_jobs = n_jobs
         self.device = device
+        self.scale = scale
 
         if shuffle is not None:
             warnings.warn(
@@ -100,7 +107,7 @@ class KFold(_BaseKFold):
     ) -> Generator[array[int], None, None]:
         ks = _KennardStone(
             n_groups=self.get_n_splits(),
-            scale=True,
+            scale=self.scale,
             metric=self.metric,
             n_jobs=self.n_jobs,
             device=self.device,
@@ -118,6 +125,7 @@ class KSSplit(BaseShuffleSplit):
         metric: MetricLike = "euclidean",
         n_jobs: int | None = None,
         device: Device = "cpu",
+        scale: bool = True,
     ):
         """Splitting helper for train/test based on Kennard–Stone.
 
@@ -132,7 +140,7 @@ class KSSplit(BaseShuffleSplit):
         train_size : float or int, default=None
             Same semantics as ``sklearn.model_selection.train_test_split``.
 
-        metric, n_jobs, device : see also ``KFold``
+        metric, n_jobs, device, scale : see also ``KFold``
         """
         super().__init__(
             n_splits=n_splits, test_size=test_size, train_size=train_size
@@ -140,6 +148,7 @@ class KSSplit(BaseShuffleSplit):
         self.metric = metric
         self.n_jobs = n_jobs
         self.device = device
+        self.scale = scale
 
         assert self.get_n_splits() == 1, "n_splits must be 1"
         self._default_test_size = 0.1
@@ -151,7 +160,7 @@ class KSSplit(BaseShuffleSplit):
         """Internal generator. Yields train/test indices."""
         ks = _KennardStone(
             n_groups=1,
-            scale=True,
+            scale=self.scale,
             metric=self.metric,
             n_jobs=self.n_jobs,
             device=self.device,
@@ -179,6 +188,7 @@ def train_test_split(
     metric: MetricLike = "euclidean",
     n_jobs: int | None = None,
     device: Device = "cpu",
+    scale: bool = True,
     random_state: None = None,
     shuffle: None = None,
 ) -> list[T]:
@@ -201,7 +211,7 @@ def train_test_split(
         Proportion or absolute count for the train split. If ``None``, becomes
         the complement of ``test_size``.
 
-    metric, n_jobs, device : see also ``KFold``
+    metric, n_jobs, device, scale : see also ``KFold``
 
     random_state, shuffle : None, deprecated
         No effect (algorithm is deterministic).
@@ -249,6 +259,7 @@ def train_test_split(
         metric=metric,
         n_jobs=n_jobs,
         device=device,
+        scale=scale,
     )
 
     train, test = next(cv.split(X=arrays[0]))

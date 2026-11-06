@@ -1,0 +1,52 @@
+"""Tests for options of the public API."""
+
+from __future__ import annotations
+
+import numpy as np
+import pytest
+from _legacy_v3_0_2 import _KennardStone as _LegacyKennardStone
+from _regression_cases import DATASETS
+
+from kennard_stone import KFold, train_test_split
+
+
+@pytest.fixture
+def X() -> np.ndarray:
+    # Features on very different scales, so scaling changes the order.
+    X = DATASETS["diabetes"]()
+    return X * np.arange(1, X.shape[1] + 1) ** 3
+
+
+@pytest.mark.parametrize("scale", [True, False])
+def test_train_test_split_scale(X, scale):
+    (order,) = [
+        list(map(int, indexes))
+        for indexes in _LegacyKennardStone(scale=scale).get_indexes(X)
+    ]
+
+    _, _, train, test = train_test_split(
+        X, np.arange(len(X)), test_size=0.2, scale=scale
+    )
+
+    n_test = len(test)
+    assert test.tolist() == order[:n_test]
+    assert train.tolist() == order[n_test:]
+
+
+def test_scale_changes_order(X):
+    orders = [
+        train_test_split(X, np.arange(len(X)), test_size=0.2, scale=scale)[3]
+        for scale in (True, False)
+    ]
+    assert orders[0].tolist() != orders[1].tolist()
+
+
+@pytest.mark.parametrize("scale", [True, False])
+def test_kfold_scale(X, scale):
+    folds = _LegacyKennardStone(n_groups=3, scale=scale).get_indexes(X)
+
+    splits = list(KFold(n_splits=3, scale=scale).split(X))
+
+    assert [test.tolist() for _, test in splits] == [
+        sorted(map(int, fold)) for fold in folds
+    ]
