@@ -354,7 +354,15 @@ class _KennardStone:
                 f"got n_groups={self.n_groups}."
             )
 
-        X_processed = _preprocess(_validate(X, self.metric), self.scale)
+        X_checked = _validate(X, self.metric)
+        n_samples = X_checked.shape[0]
+        if self.n_groups > n_samples:
+            raise ValueError(
+                f"n_groups={self.n_groups} must not exceed "
+                f"n_samples={n_samples}."
+            )
+
+        X_processed = _preprocess(X_checked, self.scale)
 
         # Pre-calculate the distance matrix.
         self.distance_matrix = pairwise_distances(
@@ -469,6 +477,12 @@ def _greedy_select(
         array("L") for _ in range(n_groups)
     ]
     indexes_remaining_prev = array("L", range(n_samples))
+
+    # Values used after the loop when it runs zero times
+    # (n_samples == n_groups): each group holds only its initial sample.
+    lst_indexes_selected = lst_indexes_selected_prev
+    indexes_selected_next = indexes_selected
+    n_remaining = n_samples - len(indexes_selected)
 
     for _ in range(n_samples // n_groups + bool(n_samples % n_groups) - 1):
         # collect the current indexes
