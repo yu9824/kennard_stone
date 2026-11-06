@@ -24,13 +24,15 @@ from sklearn.utils.validation import _num_samples
 
 from ..utils._compat import finite_check_kwargs
 from ..utils._pairwise import pairwise_distances
-from ..utils._type_alias import Device, MetricLike
+from ..utils._type_alias import Device, InitMethod, MetricLike
 from ..utils._utils import (
     IgnoredArgumentWarning,
 )
 
 # for typing
 T = TypeVar("T")
+
+INIT_METHODS = ("farthest_from_mean", "farthest_pair")
 
 # TODO: Update docstrings
 
@@ -126,6 +128,7 @@ class KSSplit(BaseShuffleSplit):
         n_jobs: int | None = None,
         device: Device = "cpu",
         scale: bool = True,
+        init: InitMethod = "farthest_from_mean",
     ):
         """Splitting helper for train/test based on Kennard–Stone.
 
@@ -141,6 +144,16 @@ class KSSplit(BaseShuffleSplit):
             Same semantics as ``sklearn.model_selection.train_test_split``.
 
         metric, n_jobs, device, scale : see also ``KFold``
+
+        init : {"farthest_from_mean", "farthest_pair"}, default="farthest_from_mean"
+            How to choose the first selected samples. Selection then proceeds
+            greedily by the max-min distance criterion in both cases.
+
+            - ``"farthest_from_mean"``: start from the sample farthest from the
+              mean of the (preprocessed) data.
+            - ``"farthest_pair"``: start from the two samples with the largest
+              mutual distance, as in the original Kennard–Stone algorithm
+              (Kennard & Stone, 1969).
         """
         super().__init__(
             n_splits=n_splits, test_size=test_size, train_size=train_size
@@ -149,6 +162,7 @@ class KSSplit(BaseShuffleSplit):
         self.n_jobs = n_jobs
         self.device = device
         self.scale = scale
+        self.init = init
 
         assert self.get_n_splits() == 1, "n_splits must be 1"
         self._default_test_size = 0.1
@@ -164,6 +178,7 @@ class KSSplit(BaseShuffleSplit):
             metric=self.metric,
             n_jobs=self.n_jobs,
             device=self.device,
+            init=self.init,
         )
         indexes = ks.get_indexes(X)[0]
 
@@ -189,6 +204,7 @@ def train_test_split(
     n_jobs: int | None = None,
     device: Device = "cpu",
     scale: bool = True,
+    init: InitMethod = "farthest_from_mean",
     random_state: None = None,
     shuffle: None = None,
 ) -> list[T]:
@@ -212,6 +228,16 @@ def train_test_split(
         the complement of ``test_size``.
 
     metric, n_jobs, device, scale : see also ``KFold``
+
+    init : {"farthest_from_mean", "farthest_pair"}, default="farthest_from_mean"
+        How to choose the first selected samples. Selection then proceeds
+        greedily by the max-min distance criterion in both cases.
+
+        - ``"farthest_from_mean"``: start from the sample farthest from the
+          mean of the (preprocessed) data.
+        - ``"farthest_pair"``: start from the two samples with the largest
+          mutual distance, as in the original Kennard–Stone algorithm
+          (Kennard & Stone, 1969).
 
     random_state, shuffle : None, deprecated
         No effect (algorithm is deterministic).
@@ -260,6 +286,7 @@ def train_test_split(
         n_jobs=n_jobs,
         device=device,
         scale=scale,
+        init=init,
     )
 
     train, test = next(cv.split(X=arrays[0]))
@@ -279,6 +306,7 @@ class _KennardStone:
         metric: MetricLike = "euclidean",
         n_jobs: int | None = None,
         device: Device = "cpu",
+        init: InitMethod = "farthest_from_mean",
     ) -> None:
         """Internal class implementing the core of the Kennard–Stone algorithm.
 
@@ -291,12 +319,17 @@ class _KennardStone:
             Whether to standardize features before computing distances.
 
         metric, n_jobs, device : see also ``KFold``
+
+        init : {"farthest_from_mean", "farthest_pair"}, default="farthest_from_mean"
+            See ``train_test_split``. ``"farthest_pair"`` requires
+            ``n_groups=1``.
         """
         self.n_groups = n_groups
         self.scale = scale
         self.metric = metric
         self.n_jobs = n_jobs
         self.device = device
+        self.init = init
 
     def get_indexes(self, X: ArrayLike) -> list[array[int]]:
         """Compute index sequences using the Kennard–Stone procedure.
@@ -311,6 +344,16 @@ class _KennardStone:
         list[array[int]]
             A list of index arrays corresponding to each group.
         """
+        if self.init not in INIT_METHODS:
+            raise ValueError(
+                f"init must be one of {INIT_METHODS}, got {self.init!r}."
+            )
+        if self.init == "farthest_pair" and self.n_groups != 1:
+            raise ValueError(
+                "init='farthest_pair' is only supported when n_groups=1, "
+                f"got n_groups={self.n_groups}."
+            )
+
         X_processed = _preprocess(_validate(X, self.metric), self.scale)
 
         # Pre-calculate the distance matrix.
@@ -321,13 +364,16 @@ class _KennardStone:
             device=self.device,
         )
 
-        initial_indexes = _farthest_from_mean(
-            X_processed,
-            self.n_groups,
-            metric=self.metric,
-            n_jobs=self.n_jobs,
-            device=self.device,
-        )
+        if self.init == "farthest_pair":
+            initial_indexes = _farthest_pair_start(self.distance_matrix)
+        else:
+            initial_indexes = _farthest_from_mean(
+                X_processed,
+                self.n_groups,
+                metric=self.metric,
+                n_jobs=self.n_jobs,
+                device=self.device,
+            )
         return _greedy_select(
             self.distance_matrix, initial_indexes, self.n_groups
         )
@@ -383,6 +429,19 @@ def _farthest_from_mean(
         **_metric_kwargs(X, metric),
     ).ravel()
     return array("i", np.argsort(distance_to_ave)[::-1][:n_groups].tolist())
+
+
+def _farthest_pair_start(distance_matrix: np.ndarray) -> array[int]:
+    """Start of the original Kennard–Stone algorithm (single group).
+
+    Returns ``i`` of the most distant pair ``(i, j)`` (the first maximum in
+    row-major order). Greedy selection from ``i`` picks ``j`` next, because
+    ``distance_matrix[i, j]`` is the global maximum and ``j`` is the first
+    maximum in row ``i``. Hence the first two selected samples are the most
+    distant pair.
+    """
+    i, _ = np.unravel_index(np.argmax(distance_matrix), distance_matrix.shape)
+    return array("i", (int(i),))
 
 
 def _greedy_select(

@@ -6,8 +6,11 @@ import numpy as np
 import pytest
 from _legacy_v3_0_2 import _KennardStone as _LegacyKennardStone
 from _regression_cases import DATASETS
+from sklearn.metrics import pairwise_distances
+from sklearn.preprocessing import StandardScaler
 
 from kennard_stone import KFold, train_test_split
+from kennard_stone._core._core import _KennardStone
 
 
 @pytest.fixture
@@ -50,3 +53,33 @@ def test_kfold_scale(X, scale):
     assert [test.tolist() for _, test in splits] == [
         sorted(map(int, fold)) for fold in folds
     ]
+
+
+def test_init_default_is_farthest_from_mean(X):
+    default = train_test_split(X, np.arange(len(X)), test_size=0.2)[3]
+    explicit = train_test_split(
+        X, np.arange(len(X)), test_size=0.2, init="farthest_from_mean"
+    )[3]
+    assert default.tolist() == explicit.tolist()
+
+
+def test_init_farthest_pair_starts_from_most_distant_pair(X):
+    D = pairwise_distances(StandardScaler().fit_transform(X))
+    pair = {int(i) for i in np.unravel_index(np.argmax(D), D.shape)}
+
+    train = train_test_split(
+        X, np.arange(len(X)), test_size=0.2, init="farthest_pair"
+    )[2]
+
+    # train holds samples in reverse order of selection.
+    assert set(train[-2:].tolist()) == pair
+
+
+def test_init_invalid_value(X):
+    with pytest.raises(ValueError, match="init must be one of"):
+        train_test_split(X, test_size=0.2, init="unknown")
+
+
+def test_init_farthest_pair_requires_single_group(X):
+    with pytest.raises(ValueError, match="n_groups=1"):
+        _KennardStone(n_groups=2, init="farthest_pair").get_indexes(X)

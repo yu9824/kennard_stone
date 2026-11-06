@@ -68,3 +68,6 @@ MetricLike: TypeAlias = Union[
     Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
 ]
 """Metric name or a callable returning a distance matrix."""
+
+InitMethod: TypeAlias = Literal["farthest_from_mean", "farthest_pair"]
+"""How to choose the first selected samples in the Kennard–Stone algorithm."""
