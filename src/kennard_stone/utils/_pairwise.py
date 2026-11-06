@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import warnings
-from inspect import signature
 
 import numpy as np
 import sklearn.metrics.pairwise
 from numpy.typing import ArrayLike
 
 from ..logging import get_child_logger
+from ._compat import finite_check_kwargs
 from ._type_alias import Device, MetricLike
 from ._utils import is_installed
 
@@ -107,34 +107,16 @@ def pairwise_distances(
             _logger.info(
                 "Calculating pairwise distances using scikit-learn.\n"
             )
-        # scikit-learn 1.6+ deprecates 'force_all_finite' and 1.8 renames to
-        # 'ensure_all_finite'. Dynamically use whichever is available.
-        pd_sig = signature(sklearn.metrics.pairwise.pairwise_distances)
-        supports_ensure_all_finite = "ensure_all_finite" in pd_sig.parameters
-        supports_force_all_finite = "force_all_finite" in pd_sig.parameters
-
-        call_kwargs = dict(
+        return sklearn.metrics.pairwise.pairwise_distances(
+            X,
             Y=Y,
             metric=metric,
             n_jobs=n_jobs,
+            **finite_check_kwargs(
+                sklearn.metrics.pairwise.pairwise_distances, ensure_all_finite
+            ),
             **kwargs,
         )
-        if supports_ensure_all_finite:
-            call_kwargs["ensure_all_finite"] = ensure_all_finite
-        elif supports_force_all_finite:
-            call_kwargs["force_all_finite"] = ensure_all_finite
-
-        try:
-            return sklearn.metrics.pairwise.pairwise_distances(
-                X, **call_kwargs
-            )
-        except TypeError:
-            # Fallback for environments where the arg is rejected at runtime
-            call_kwargs.pop("ensure_all_finite", None)
-            call_kwargs.pop("force_all_finite", None)
-            return sklearn.metrics.pairwise.pairwise_distances(
-                X, **call_kwargs
-            )
     else:
         if verbose > 0:
             _logger.info(

@@ -7,7 +7,6 @@ from __future__ import annotations
 import warnings
 from array import array
 from collections.abc import Generator
-from inspect import signature
 from itertools import chain
 from typing import Any, TypeVar
 
@@ -23,6 +22,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.utils import _safe_indexing, check_array, indexable
 from sklearn.utils.validation import _num_samples
 
+from ..utils._compat import finite_check_kwargs
 from ..utils._pairwise import pairwise_distances
 from ..utils._type_alias import Device, MetricLike
 from ..utils._utils import (
@@ -300,42 +300,15 @@ class _KennardStone:
             A list of index arrays corresponding to each group.
         """
         # check input array
-        # scikit-learn 1.6+ deprecates 'force_all_finite' and 1.8 renames to
-        # 'ensure_all_finite'. Check the signature dynamically.
-        check_array_sig = signature(check_array)
-        supports_ensure_all_finite = (
-            "ensure_all_finite" in check_array_sig.parameters
-        )
-        supports_force_all_finite = (
-            "force_all_finite" in check_array_sig.parameters
-        )
-
-        check_kwargs: dict[str, Any] = dict(
+        X_checked: np.ndarray = check_array(
+            X,
             ensure_2d=True,
             dtype="numeric",
+            **finite_check_kwargs(
+                check_array,
+                "allow-nan" if self.metric == "nan_euclidean" else True,
+            ),
         )
-        if supports_ensure_all_finite:
-            check_kwargs["ensure_all_finite"] = (
-                "allow-nan" if self.metric == "nan_euclidean" else True
-            )
-        elif supports_force_all_finite:
-            check_kwargs["force_all_finite"] = (
-                "allow-nan" if self.metric == "nan_euclidean" else True
-            )
-
-        try:
-            X_checked: np.ndarray = check_array(
-                X,
-                **check_kwargs,
-            )
-        except TypeError:
-            # Fallback when the argument is not accepted at runtime
-            check_kwargs.pop("ensure_all_finite", None)
-            check_kwargs.pop("force_all_finite", None)
-            X_checked = check_array(
-                X,
-                **check_kwargs,
-            )
         n_samples = X_checked.shape[0]
 
         # drop no variance
