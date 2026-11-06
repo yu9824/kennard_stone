@@ -82,6 +82,7 @@ class KFold(_BaseKFold):
                 "`shuffle` is unnecessary because it is always shuffled"
                 " in this algorithm.",
                 IgnoredArgumentWarning,
+                stacklevel=2,
             )
         del self.shuffle
 
@@ -90,6 +91,7 @@ class KFold(_BaseKFold):
                 "`random_state` is unnecessary since it is uniquely determined"
                 " in this algorithm.",
                 IgnoredArgumentWarning,
+                stacklevel=2,
             )
         del self.random_state
 
@@ -219,6 +221,7 @@ def train_test_split(
             "`shuffle` is unnecessary because it is always shuffled"
             " in this algorithm.",
             IgnoredArgumentWarning,
+            stacklevel=2,
         )
 
     if random_state is not None:
@@ -226,6 +229,7 @@ def train_test_split(
             "`random_state` is unnecessary since it is uniquely determined"
             " in this algorithm.",
             IgnoredArgumentWarning,
+            stacklevel=2,
         )
 
     n_arrays = len(arrays)
