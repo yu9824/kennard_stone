@@ -165,6 +165,9 @@ Valid values for metric are:
     scipy.spatial.distance for details on these metrics.
     These metrics do not support sparse matrix inputs.
 
+    Note: 'sokalmichener' is not available with SciPy >= 1.17
+    because it has been removed from SciPy.
+
 , by default "euclidean"
 
 ## Parallelization (since v2.1.0)
