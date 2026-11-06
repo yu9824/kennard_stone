@@ -143,6 +143,32 @@ If these arguments are included, they do not cause an error. They simply have no
 If you want to run the notebook in examples directory,
 you will need to additionally install `pandas`, `matplotlib`, `seaborn`, `tqdm`, and `jupyter` other than the packages in requirements.txt.
 
+## Scaling and initial points (since v3.1.0)
+
+### Scaling
+
+Before computing distances, features with zero variance are dropped and the remaining features are standardized with `StandardScaler`.
+Set `scale=False` to keep the original feature scales (zero-variance features are still dropped).
+
+```python
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, scale=False)
+kf = KFold(n_splits=5, scale=False)
+```
+
+### Initial points
+
+`train_test_split` can choose how the selection starts with `init`.
+In both cases, the selection then repeatedly adds the sample whose distance to its nearest selected sample is the largest.
+
+- `init="farthest_from_mean"` (default): start from the sample farthest from the mean of the data.
+- `init="farthest_pair"`: start from the two samples with the largest mutual distance, as in the original paper (Kennard & Stone, 1969).
+
+```python
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, init="farthest_pair")
+```
+
+`KFold` always uses `"farthest_from_mean"`: each fold starts from one of the `n_splits` samples farthest from the mean.
+
 ## Distance metrics
 
 See the documentation of
