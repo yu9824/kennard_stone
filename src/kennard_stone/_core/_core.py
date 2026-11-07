@@ -436,7 +436,7 @@ def _farthest_from_mean(
         device=device,
         **_metric_kwargs(X, metric),
     ).ravel()
-    return array("i", np.argsort(distance_to_ave)[::-1][:n_groups].tolist())
+    return array("L", np.argsort(distance_to_ave)[::-1][:n_groups].tolist())
 
 
 def _farthest_pair_start(distance_matrix: np.ndarray) -> array[int]:
@@ -449,7 +449,7 @@ def _farthest_pair_start(distance_matrix: np.ndarray) -> array[int]:
     distant pair.
     """
     i, _ = np.unravel_index(np.argmax(distance_matrix), distance_matrix.shape)
-    return array("i", (int(i),))
+    return array("L", (int(i),))
 
 
 def _greedy_select(
@@ -481,7 +481,7 @@ def _greedy_select(
     # Values used after the loop when it runs zero times
     # (n_samples == n_groups): each group holds only its initial sample.
     lst_indexes_selected = lst_indexes_selected_prev
-    indexes_selected_next = indexes_selected
+    indexes_selected_next: array[int] = indexes_selected
     n_remaining = n_samples - len(indexes_selected)
 
     for _ in range(n_samples // n_groups + bool(n_samples % n_groups) - 1):
@@ -524,7 +524,7 @@ def _greedy_select(
         # ユークリッド距離を計算し，その最小の値を「代表長さ」とする．
 
         _st_arg_delete: set[int] = set()
-        indexes_selected_next: array[int] = array("L")
+        indexes_selected_next = array("L")
         for k in range(n_groups):
             if k == 0:
                 arg_delete = np.argmax(
