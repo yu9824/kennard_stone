@@ -46,8 +46,7 @@ You need `numpy>=1.20` and `scikit-learn` to run.
 
 You can use them like [scikit-learn](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection).
 
-See the [documentation](https://yu9824.github.io/kennard_stone/) for the API reference,
-and [examples](https://github.com/yu9824/kennard_stone/tree/main/examples) for details.
+See the [documentation](https://yu9824.github.io/kennard_stone/) for the API reference and tutorials.
 
 In the following, `X` denotes an arbitrary explanatory variable and `y` an arbitrary objective variable.
 And, `estimator` indicates an arbitrary prediction model that conforms to scikit-learn.
@@ -141,7 +140,7 @@ print(cross_validate(estimator, X, y, cv=5))
 There is no notion of `random_state` or `shuffle` because the partitioning is determined uniquely for the dataset.
 If these arguments are included, they do not cause an error. They simply have no effect on the result. Please be careful.
 
-To run the notebooks in the examples directory, install the extra dependencies with `pip install "kennard-stone[example]"`.
+To run the tutorial notebooks in `docs_src/tutorials`, install the extra dependencies with `pip install "kennard-stone[example]"`.
 
 ## Changes in v4.0.0
 

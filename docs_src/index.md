@@ -9,3 +9,10 @@ a scikit-learn compatible interface (`train_test_split` and `KFold`).
 
 modules
 ```
+
+```{toctree}
+:maxdepth: 2
+:caption: Tutorials
+
+tutorials/index
+```

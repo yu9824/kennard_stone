@@ -1,4 +1,4 @@
-"""logging"""
+"""Logging utilities of kennard_stone."""
 
 from logging import CRITICAL, DEBUG, ERROR, INFO, NOTSET, WARNING
 
