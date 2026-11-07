@@ -1,6 +1,7 @@
 # https://packaging.python.org/ja/latest/guides/writing-pyproject-toml/
 [build-system]
-requires = ["setuptools"]
+# The version is derived from git tags by setuptools-scm.
+requires = ["setuptools>=77.0.3", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -15,7 +16,9 @@ authors = [{ name = "yu9824" }]
 maintainers = [{ name = "yu9824" }]
 description = "A method for selecting samples by spreading the training data evenly."
 readme = { file = "README.md", content-type = "text/markdown" }
-license = { file = "LICENSE" }
+# https://spdx.org/licenses/
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
 keywords = ["kennard_stone", "scikit-learn", "train_test_split", "KFold"]
 # https://pypi.org/classifiers/
 classifiers = [
@@ -26,7 +29,6 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3.15",
-    "License :: OSI Approved :: MIT License",
 ] # https://pypi.org/classifiers/
 
 [project.optional-dependencies]
@@ -54,8 +56,9 @@ Changelog = "https://github.com/yu9824/kennard_stone/blob/main/CHANGELOG.md"
 [tool.setuptools]
 package-dir = { "" = "src" }
 
-[tool.setuptools.dynamic]
-version = { attr = "kennard_stone.__version__" }
-
 [tool.setuptools.packages.find]
 where = ["src/"]
+
+# No version file is written; kennard_stone.__version__ reads the installed
+# package metadata.
+[tool.setuptools_scm]

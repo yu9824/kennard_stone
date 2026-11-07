@@ -26,9 +26,15 @@ autodocumentation.
 Copyright © 2021 yu9824
 """
 
+from importlib.metadata import PackageNotFoundError, version
+
 from ._core._core import KFold, train_test_split
 
-__version__ = "4.1.0"
+try:
+    __version__ = version("kennard-stone")
+except PackageNotFoundError:
+    # Not installed, e.g. imported from the source tree via PYTHONPATH.
+    __version__ = "unknown"
 __license__ = "MIT"
 __author__ = "yu9824"
 __copyright__ = "Copyright © 2021 yu9824"
