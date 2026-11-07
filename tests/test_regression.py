@@ -80,7 +80,9 @@ def test_kfold_matches_legacy(n_splits):
     )
 
     # scikit-learn returns the indexes of each split in ascending order.
-    for (train, test), fold in zip(KFold(n_splits=n_splits).split(X), folds):
+    for (train, test), fold in zip(
+        KFold(n_splits=n_splits).split(X), folds, strict=True
+    ):
         assert test.tolist() == sorted(fold)
         assert train.tolist() == sorted(
             i for other in folds if other is not fold for i in other

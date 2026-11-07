@@ -30,3 +30,7 @@ ignore = [
     "RUF003",
 ]
 unfixable = ["F401"]
+
+[lint.per-file-ignores]
+# Literals redundant with str are kept to show the common device names.
+"src/kennard_stone/utils/_type_alias.py" = ["PYI051"]

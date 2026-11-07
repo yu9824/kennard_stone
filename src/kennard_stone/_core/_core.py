@@ -498,7 +498,7 @@ def _greedy_select(
         lst_indexes_selected = [
             indexes_selected_prev + array("L", (index_selected,))
             for indexes_selected_prev, index_selected in zip(
-                lst_indexes_selected_prev, indexes_selected
+                lst_indexes_selected_prev, indexes_selected, strict=True
             )
         ]
         # /collect the current indexes
@@ -530,7 +530,7 @@ def _greedy_select(
                 arg_delete = np.argmax(
                     distance_min[k],
                 ).item()
-            elif 0 < n_remaining - k:
+            elif n_remaining - k > 0:
                 sorted_args = array(
                     "L",
                     np.argsort(
