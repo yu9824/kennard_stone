@@ -31,6 +31,7 @@ jobs:
       pull-requests: read
     outputs:
       code: ${{ steps.filter.outputs.code }}
+      docs: ${{ steps.filter.outputs.docs }}
     steps:
       # On push, the diff is computed from the git history, so fetch it all.
       - uses: actions/checkout@v7
@@ -47,6 +48,12 @@ jobs:
               - 'tests/**'
               - '**/*.py'
               - '.github/workflows/CI.yml'
+              - 'pyproject.toml'
+            docs:
+              - 'src/**'
+              - 'docs_src/**'
+              - '.github/workflows/CI.yml'
+              - '.github/workflows/docs.yml'
               - 'pyproject.toml'
 
   test:
@@ -69,3 +76,26 @@ jobs:
     - name: Test with pytest
       run: |
         pytest -xs
+
+  # Build the documentation without deploying it, so that a broken build is
+  # found before a release (docs.yml deploys only on tag pushes).
+  docs:
+    needs: changes
+    if: needs.changes.outputs.docs == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0  # setuptools-scm needs the tags for the version
+    - uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
+    - name: Install dependencies
+      run: |
+        pip install ".[docs]"
+    - name: sphinx-apidoc
+      run: |
+        sphinx-apidoc -f -o ./docs_src ./src/kennard_stone --module-first
+    - name: Sphinx build
+      run: |
+        sphinx-build -b html ./docs_src ./docs
