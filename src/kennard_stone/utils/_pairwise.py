@@ -98,7 +98,9 @@ def pairwise_distances(
             p = kwargs.get("p", 2)
         else:
             p = None
-            warnings.warn(f"{metric} is not supported by PyTorch. ")
+            warnings.warn(
+                f"{metric} is not supported by PyTorch. ", stacklevel=2
+            )
     else:
         p = None
 
