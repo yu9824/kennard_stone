@@ -9,7 +9,7 @@
 from kennard_stone import __author__, __version__
 
 project = "kennard-stone"
-copyright = "2024, yu9824"
+copyright = "2021, yu9824"
 author = __author__
 release = __version__
 
@@ -20,26 +20,36 @@ extensions = [
     "sphinx.ext.autodoc",  # docstringからドキュメントを作成してくれる。
     "sphinx.ext.napoleon",  # google式・numpy式docstringを整形してくれる。
     "sphinx.ext.githubpages",  # github-pages用のファイルを生成してくれる。
-    "recommonmark",  # markdownで書けるようにする。
-    "sphinx_markdown_tables",  # markdownの表を書けるようにする。
+    "myst_nb",  # Markdown と Jupyter Notebook を読み込む。
 ]
 
-templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+# Show type aliases by name instead of expanding them. Device would otherwise
+# depend on whether torch is installed in the docs build.
+autodoc_type_aliases = {
+    "Device": "kennard_stone.utils._type_alias.Device",
+    "MetricLike": "kennard_stone.utils._type_alias.MetricLike",
+    "InitMethod": "kennard_stone.utils._type_alias.InitMethod",
+}
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "sphinx_rtd_theme"
+html_theme = "sphinx_book_theme"
 html_static_path = ["_static"]
 
-# for markdown documentations
-source_suffix = [".rst", ".md"]
-source_parsers = {
-    ".md": "recommonmark.parser.CommonMarkParser",
+html_theme_options = {
+    "repository_url": "https://github.com/yu9824/kennard_stone",
+    "use_repository_button": True,
+    "show_toc_level": 2,
 }
 
-# for multi-version
-# smv_tag_whitelist = r"^v\d+\.\d+.\d+$"  # Include tags like "v2.1.1"
-# smv_branch_whitelist = r"^(main).*$"  # Include 'main' branch only
+# MyST-NB: show the outputs saved in the notebooks without executing them.
+nb_execution_mode = "off"
+
+myst_enable_extensions = [
+    "dollarmath",
+    "colon_fence",
+]
