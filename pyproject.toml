@@ -16,7 +16,9 @@ authors = [{ name = "yu9824" }]
 maintainers = [{ name = "yu9824" }]
 description = "A method for selecting samples by spreading the training data evenly."
 readme = { file = "README.md", content-type = "text/markdown" }
-license = { file = "LICENSE" }
+# https://spdx.org/licenses/
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
 keywords = ["kennard_stone", "scikit-learn", "train_test_split", "KFold"]
 # https://pypi.org/classifiers/
 classifiers = [
@@ -27,7 +29,6 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3.15",
-    "License :: OSI Approved :: MIT License",
 ] # https://pypi.org/classifiers/
 
 [project.optional-dependencies]
