@@ -46,7 +46,7 @@ def test_scale_changes_order(X):
 
 @pytest.mark.parametrize("scale", [True, False])
 def test_kfold_scale(X, scale):
-    folds = _LegacyKennardStone(n_groups=3, scale=scale).get_indexes(X)
+    folds = _KennardStone(n_groups=3, scale=scale).get_indexes(X)
 
     splits = list(KFold(n_splits=3, scale=scale).split(X))
 

@@ -537,18 +537,11 @@ def _greedy_select(
                         distance_min[k],
                     ).tolist(),
                 )
-                # 最大値を取るサンプル (代表長さが最も大きい) のindex_numberを保存
-                # The search starts at position n_remaining - k (kept for
-                # compatibility). If every sample at or below it has already
-                # been taken in this round, continue with the higher
-                # positions, best first. Otherwise a taken sample would be
-                # selected again: it would belong to two groups and another
-                # sample to none. At most k samples are taken and
-                # n_remaining > k, so a free sample always exists.
-                for j in chain(
-                    range(n_remaining - k, -1, -1),
-                    range(n_remaining - 1, n_remaining - k, -1),
-                ):
+                # Take the sample with the largest representative distance
+                # among those not taken by earlier groups in this round.
+                # At most k samples are taken and n_remaining > k, so a free
+                # sample always exists.
+                for j in range(n_remaining - 1, -1, -1):
                     arg_delete = sorted_args[j]
                     if arg_delete not in _st_arg_delete:
                         break
