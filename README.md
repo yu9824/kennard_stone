@@ -150,7 +150,7 @@ you will need to additionally install `pandas`, `matplotlib`, `seaborn`, `tqdm`,
   but in v3 the third and later folds could skip their best candidates.
   `KFold` with `n_splits=2` and `train_test_split` are not affected.
   To reproduce the folds of v3, use `kennard-stone<4`.
-- Python 3.8 and 3.9 will no longer be supported.
+- Python 3.8 and 3.9 are no longer supported. Python 3.10 or later is required.
 
 Since v3.1.0, `KFold` no longer puts a sample in two test folds (which left another sample in none).
 On datasets where that happened, the folds differ from earlier versions.
