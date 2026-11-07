@@ -10,8 +10,6 @@ _logger = get_child_logger(__name__)
 class IgnoredArgumentWarning(Warning):
     """Warning used to ignore an argument."""
 
-    ...
-
 
 def is_installed(package_name: str) -> bool:
     """Check if the package is installed.

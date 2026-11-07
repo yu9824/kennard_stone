@@ -58,10 +58,3 @@ version = { attr = "kennard_stone.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src/"]
-
-[tool.ruff]
-line-length = 79
-indent-width = 4
-
-[tool.ruff.lint]
-unfixable = ["F401"]

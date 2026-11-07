@@ -14,9 +14,10 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 
-from _regression_cases import EXACT_CASES, run_core_case
+# Imported after extending sys.path above.
+from _regression_cases import EXACT_CASES, run_core_case  # noqa: E402
 
-import kennard_stone
+import kennard_stone  # noqa: E402
 
 
 def main() -> None:

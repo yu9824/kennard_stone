@@ -28,10 +28,7 @@ def _color_supported() -> bool:
     if os.environ.get("NO_COLOR", None):
         return False
 
-    if not hasattr(sys.stderr, "isatty") or not sys.stderr.isatty():
-        return False
-    else:
-        return True
+    return hasattr(sys.stderr, "isatty") and sys.stderr.isatty()
 
 
 _default_handler: StreamHandler | None = None
@@ -203,8 +200,8 @@ class catch_default_handler:
 
     def __exit__(
         self,
-        exc_type: type[Exception] | None,
-        exc_value: Exception | None,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
         enable_default_handler()

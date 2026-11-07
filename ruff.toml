@@ -1,0 +1,41 @@
+line-length = 79
+indent-width = 4
+extend-exclude = [
+    # The v1 reference implementation, kept only to cross-check results in
+    # tests/test_new_old_match.py.
+    "src/kennard_stone/_deprecated.py",
+    # A verbatim copy of the v3.0.2 core for regression tests.
+    "tests/_legacy_v3_0_2.py",
+]
+
+[lint]
+select = [
+    "E4",
+    "E7",
+    "E9",
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "PIE", # flake8-pie
+    "PYI", # flake8-pyi
+    "RUF", # ruff-specific rules
+]
+ignore = [
+    # Docstrings and comments intentionally use characters such as the
+    # en dash in "Kennard–Stone" and Japanese punctuation.
+    "RUF001",
+    "RUF002",
+    "RUF003",
+]
+unfixable = ["F401"]
+
+[lint.pydocstyle]
+# Docstrings follow the numpydoc style. This takes effect once the "D"
+# rules are selected.
+convention = "numpy"
+
+[lint.per-file-ignores]
+# Literals redundant with str are kept to show the common device names.
+"src/kennard_stone/utils/_type_alias.py" = ["PYI051"]
