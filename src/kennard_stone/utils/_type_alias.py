@@ -12,21 +12,14 @@ clear Sphinx rendering.
 
 from __future__ import annotations
 
-import sys
-
 # NOTE: Type aliases below are evaluated at runtime, so they must keep using
 # ``typing.Union`` / ``typing.Callable`` instead of ``X | Y`` /
 # ``collections.abc.Callable[...]`` while Python 3.8 and 3.9 are supported.
 # Switch to the PEP 604 / PEP 585 syntax after dropping Python 3.8 and 3.9.
-from typing import Callable, Literal, Union
+from typing import Callable, Literal, TypeAlias, Union
 
 import numpy as np
 from numpy.typing import ArrayLike
-
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias
-else:
-    from typing_extensions import TypeAlias
 
 from ._utils import is_installed
 
