@@ -4,19 +4,11 @@ Copyright © 2021 yu9824
 
 from __future__ import annotations
 
-import sys
 import warnings
 from array import array
+from collections.abc import Generator
 from itertools import chain
-from typing import Any, Optional, TypeVar, Union
-
-if sys.version_info >= (3, 9):
-    from collections.abc import Callable, Generator
-else:
-    from typing import Callable, Generator
-
-
-from inspect import signature
+from typing import Any, TypeVar
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -30,14 +22,17 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.utils import _safe_indexing, check_array, indexable
 from sklearn.utils.validation import _num_samples
 
+from ..utils._compat import finite_check_kwargs
 from ..utils._pairwise import pairwise_distances
-from ..utils._type_alias import Device, Metrics
+from ..utils._type_alias import Device, InitMethod, MetricLike
 from ..utils._utils import (
     IgnoredArgumentWarning,
 )
 
 # for typing
 T = TypeVar("T")
+
+INIT_METHODS = ("farthest_from_mean", "farthest_pair")
 
 # TODO: Update docstrings
 
@@ -47,11 +42,10 @@ class KFold(_BaseKFold):
         self,
         n_splits: int = 5,
         *,
-        metric: Union[
-            Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
-        ] = "euclidean",
-        n_jobs: Optional[int] = None,
+        metric: MetricLike = "euclidean",
+        n_jobs: int | None = None,
         device: Device = "cpu",
+        scale: bool = True,
         shuffle: None = None,
         random_state: None = None,
     ) -> None:
@@ -75,6 +69,11 @@ class KFold(_BaseKFold):
         device : {"cpu", "cuda", "mps"} or torch.device or str, default="cpu"
             Device for distance matrix computation.
 
+        scale : bool, default=True
+            Whether to standardize features (``StandardScaler``) before
+            computing distances. Features with zero variance are always
+            dropped.
+
         random_state : None, deprecated
             No effect (algorithm is deterministic).
 
@@ -85,12 +84,14 @@ class KFold(_BaseKFold):
         self.metric = metric
         self.n_jobs = n_jobs
         self.device = device
+        self.scale = scale
 
         if shuffle is not None:
             warnings.warn(
                 "`shuffle` is unnecessary because it is always shuffled"
                 " in this algorithm.",
                 IgnoredArgumentWarning,
+                stacklevel=2,
             )
         del self.shuffle
 
@@ -99,6 +100,7 @@ class KFold(_BaseKFold):
                 "`random_state` is unnecessary since it is uniquely determined"
                 " in this algorithm.",
                 IgnoredArgumentWarning,
+                stacklevel=2,
             )
         del self.random_state
 
@@ -107,15 +109,12 @@ class KFold(_BaseKFold):
     ) -> Generator[array[int], None, None]:
         ks = _KennardStone(
             n_groups=self.get_n_splits(),
-            scale=True,
+            scale=self.scale,
             metric=self.metric,
             n_jobs=self.n_jobs,
             device=self.device,
         )
-        indexes = ks.get_indexes(X)
-
-        for index in indexes:
-            yield index
+        yield from ks.get_indexes(X)
 
 
 class KSSplit(BaseShuffleSplit):
@@ -123,13 +122,13 @@ class KSSplit(BaseShuffleSplit):
         self,
         n_splits: int = 1,
         *,
-        test_size: Optional[Union[float, int]] = None,
-        train_size: Optional[Union[float, int]] = None,
-        metric: Union[
-            Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
-        ] = "euclidean",
-        n_jobs: Optional[int] = None,
+        test_size: float | int | None = None,
+        train_size: float | int | None = None,
+        metric: MetricLike = "euclidean",
+        n_jobs: int | None = None,
         device: Device = "cpu",
+        scale: bool = True,
+        init: InitMethod = "farthest_from_mean",
     ):
         """Splitting helper for train/test based on Kennard–Stone.
 
@@ -144,7 +143,17 @@ class KSSplit(BaseShuffleSplit):
         train_size : float or int, default=None
             Same semantics as ``sklearn.model_selection.train_test_split``.
 
-        metric, n_jobs, device : see also ``KFold``
+        metric, n_jobs, device, scale : see also ``KFold``
+
+        init : {"farthest_from_mean", "farthest_pair"}, default="farthest_from_mean"
+            How to choose the first selected samples. Selection then proceeds
+            greedily by the max-min distance criterion in both cases.
+
+            - ``"farthest_from_mean"``: start from the sample farthest from the
+              mean of the (preprocessed) data.
+            - ``"farthest_pair"``: start from the two samples with the largest
+              mutual distance, as in the original Kennard–Stone algorithm
+              (Kennard & Stone, 1969).
         """
         super().__init__(
             n_splits=n_splits, test_size=test_size, train_size=train_size
@@ -152,6 +161,8 @@ class KSSplit(BaseShuffleSplit):
         self.metric = metric
         self.n_jobs = n_jobs
         self.device = device
+        self.scale = scale
+        self.init = init
 
         assert self.get_n_splits() == 1, "n_splits must be 1"
         self._default_test_size = 0.1
@@ -163,10 +174,11 @@ class KSSplit(BaseShuffleSplit):
         """Internal generator. Yields train/test indices."""
         ks = _KennardStone(
             n_groups=1,
-            scale=True,
+            scale=self.scale,
             metric=self.metric,
             n_jobs=self.n_jobs,
             device=self.device,
+            init=self.init,
         )
         indexes = ks.get_indexes(X)[0]
 
@@ -180,19 +192,19 @@ class KSSplit(BaseShuffleSplit):
 
         for _ in range(self.get_n_splits()):
             ind_test = indexes[:n_test]
-            ind_train = indexes[n_test : (n_test + n_train)]  # noqa: E203
+            ind_train = indexes[n_test : (n_test + n_train)]
             yield ind_train.tolist(), ind_test.tolist()
 
 
 def train_test_split(
     *arrays: T,
-    test_size: Optional[Union[float, int]] = None,
-    train_size: Optional[Union[float, int]] = None,
-    metric: Union[
-        Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
-    ] = "euclidean",
-    n_jobs: Optional[int] = None,
+    test_size: float | int | None = None,
+    train_size: float | int | None = None,
+    metric: MetricLike = "euclidean",
+    n_jobs: int | None = None,
     device: Device = "cpu",
+    scale: bool = True,
+    init: InitMethod = "farthest_from_mean",
     random_state: None = None,
     shuffle: None = None,
 ) -> list[T]:
@@ -215,7 +227,17 @@ def train_test_split(
         Proportion or absolute count for the train split. If ``None``, becomes
         the complement of ``test_size``.
 
-    metric, n_jobs, device : see also ``KFold``
+    metric, n_jobs, device, scale : see also ``KFold``
+
+    init : {"farthest_from_mean", "farthest_pair"}, default="farthest_from_mean"
+        How to choose the first selected samples. Selection then proceeds
+        greedily by the max-min distance criterion in both cases.
+
+        - ``"farthest_from_mean"``: start from the sample farthest from the
+          mean of the (preprocessed) data.
+        - ``"farthest_pair"``: start from the two samples with the largest
+          mutual distance, as in the original Kennard–Stone algorithm
+          (Kennard & Stone, 1969).
 
     random_state, shuffle : None, deprecated
         No effect (algorithm is deterministic).
@@ -235,6 +257,7 @@ def train_test_split(
             "`shuffle` is unnecessary because it is always shuffled"
             " in this algorithm.",
             IgnoredArgumentWarning,
+            stacklevel=2,
         )
 
     if random_state is not None:
@@ -242,6 +265,7 @@ def train_test_split(
             "`random_state` is unnecessary since it is uniquely determined"
             " in this algorithm.",
             IgnoredArgumentWarning,
+            stacklevel=2,
         )
 
     n_arrays = len(arrays)
@@ -261,6 +285,8 @@ def train_test_split(
         metric=metric,
         n_jobs=n_jobs,
         device=device,
+        scale=scale,
+        init=init,
     )
 
     train, test = next(cv.split(X=arrays[0]))
@@ -277,11 +303,10 @@ class _KennardStone:
         self,
         n_groups: int = 1,
         scale: bool = True,
-        metric: Union[
-            Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
-        ] = "euclidean",
-        n_jobs: Optional[int] = None,
+        metric: MetricLike = "euclidean",
+        n_jobs: int | None = None,
         device: Device = "cpu",
+        init: InitMethod = "farthest_from_mean",
     ) -> None:
         """Internal class implementing the core of the Kennard–Stone algorithm.
 
@@ -294,12 +319,17 @@ class _KennardStone:
             Whether to standardize features before computing distances.
 
         metric, n_jobs, device : see also ``KFold``
+
+        init : {"farthest_from_mean", "farthest_pair"}, default="farthest_from_mean"
+            See ``train_test_split``. ``"farthest_pair"`` requires
+            ``n_groups=1``.
         """
         self.n_groups = n_groups
         self.scale = scale
         self.metric = metric
         self.n_jobs = n_jobs
         self.device = device
+        self.init = init
 
     def get_indexes(self, X: ArrayLike) -> list[array[int]]:
         """Compute index sequences using the Kennard–Stone procedure.
@@ -314,182 +344,228 @@ class _KennardStone:
         list[array[int]]
             A list of index arrays corresponding to each group.
         """
-        # check input array
-        # scikit-learn 1.6+ deprecates 'force_all_finite' and 1.8 renames to
-        # 'ensure_all_finite'. Check the signature dynamically.
-        check_array_sig = signature(check_array)
-        supports_ensure_all_finite = (
-            "ensure_all_finite" in check_array_sig.parameters
-        )
-        supports_force_all_finite = (
-            "force_all_finite" in check_array_sig.parameters
-        )
-
-        check_kwargs: dict[str, Any] = dict(
-            ensure_2d=True,
-            dtype="numeric",
-        )
-        if supports_ensure_all_finite:
-            check_kwargs["ensure_all_finite"] = (
-                "allow-nan" if self.metric == "nan_euclidean" else True
+        if self.init not in INIT_METHODS:
+            raise ValueError(
+                f"init must be one of {INIT_METHODS}, got {self.init!r}."
             )
-        elif supports_force_all_finite:
-            check_kwargs["force_all_finite"] = (
-                "allow-nan" if self.metric == "nan_euclidean" else True
+        if self.init == "farthest_pair" and self.n_groups != 1:
+            raise ValueError(
+                "init='farthest_pair' is only supported when n_groups=1, "
+                f"got n_groups={self.n_groups}."
             )
 
-        try:
-            X_checked: np.ndarray = check_array(
-                X,
-                **check_kwargs,
-            )
-        except TypeError:
-            # Fallback when the argument is not accepted at runtime
-            check_kwargs.pop("ensure_all_finite", None)
-            check_kwargs.pop("force_all_finite", None)
-            X_checked = check_array(
-                X,
-                **check_kwargs,
-            )
+        X_checked = _validate(X, self.metric)
         n_samples = X_checked.shape[0]
+        if self.n_groups > n_samples:
+            raise ValueError(
+                f"n_groups={self.n_groups} must not exceed "
+                f"n_samples={n_samples}."
+            )
 
-        # drop no variance
-        vselector = VarianceThreshold(threshold=0.0)
-        X_checked = vselector.fit_transform(X_checked)
-
-        if self.scale:
-            scaler = StandardScaler()
-            X_checked = scaler.fit_transform(X_checked)
-
-        # Save the original X_checked.
-        # self._original_X = X_checked.copy()
+        X_processed = _preprocess(X_checked, self.scale)
 
         # Pre-calculate the distance matrix.
         self.distance_matrix = pairwise_distances(
-            X_checked,
+            X_processed,
             metric=self.metric,
             n_jobs=self.n_jobs,
             device=self.device,
         )
 
-        # 全ての組成に対してそれぞれの平均との距離の二乗を配列として得る． (サンプル数の分だけ存在)
-        # distance_to_ave = np.sum(np.square(X_checked - X_checked.mean(axis=0)), axis=1)
-        kwargs_pairwise_distances: dict[str, Any] = dict()
-        if self.metric == "mahalanobis":
-            kwargs_pairwise_distances["VI"] = np.linalg.inv(
-                np.cov(X_checked, rowvar=False)
+        if self.init == "farthest_pair":
+            initial_indexes = _farthest_pair_start(self.distance_matrix)
+        else:
+            initial_indexes = _farthest_from_mean(
+                X_processed,
+                self.n_groups,
+                metric=self.metric,
+                n_jobs=self.n_jobs,
+                device=self.device,
             )
-        elif self.metric == "seuclidean":
-            kwargs_pairwise_distances["V"] = np.var(X_checked, axis=0, ddof=1)
-
-        distance_to_ave = pairwise_distances(
-            X_checked,
-            X_checked.mean(axis=0, keepdims=True),
-            metric=self.metric,
-            n_jobs=self.n_jobs,
-            device=self.device,
-            **kwargs_pairwise_distances,
-        ).ravel()
-
-        # 最大値を取るサンプル (平均からの距離が一番遠い) のindex_numberを保存
-        idx_farthest: array[int] = array(
-            "i", np.argsort(distance_to_ave)[::-1][: self.n_groups].tolist()
+        return _greedy_select(
+            self.distance_matrix, initial_indexes, self.n_groups
         )
 
-        distance_min = self.distance_matrix[idx_farthest, :]
 
-        # params
-        indexes_selected = idx_farthest
-        lst_indexes_selected_prev: list[array[int]] = [
-            array("L") for _ in range(self.n_groups)
+def _validate(X: ArrayLike, metric: MetricLike) -> np.ndarray:
+    """Validate ``X`` as a 2D numeric array (NaN allowed for nan_euclidean)."""
+    return check_array(
+        X,
+        ensure_2d=True,
+        dtype="numeric",
+        **finite_check_kwargs(
+            check_array,
+            "allow-nan" if metric == "nan_euclidean" else True,
+        ),
+    )
+
+
+def _preprocess(X: np.ndarray, scale: bool) -> np.ndarray:
+    """Drop zero-variance features and optionally standardize."""
+    X_processed = VarianceThreshold(threshold=0.0).fit_transform(X)
+    if scale:
+        X_processed = StandardScaler().fit_transform(X_processed)
+    return X_processed
+
+
+def _metric_kwargs(X: np.ndarray, metric: MetricLike) -> dict[str, Any]:
+    """Extra parameters so that distances to a single point (the mean) use
+    the statistics of the whole ``X``."""
+    if metric == "mahalanobis":
+        return {"VI": np.linalg.inv(np.cov(X, rowvar=False))}
+    if metric == "seuclidean":
+        return {"V": np.var(X, axis=0, ddof=1)}
+    return {}
+
+
+def _farthest_from_mean(
+    X: np.ndarray,
+    n_groups: int,
+    *,
+    metric: MetricLike,
+    n_jobs: int | None,
+    device: Device,
+) -> array[int]:
+    """Indexes of the ``n_groups`` samples farthest from the mean of ``X``,
+    in descending order of distance."""
+    distance_to_ave = pairwise_distances(
+        X,
+        X.mean(axis=0, keepdims=True),
+        metric=metric,
+        n_jobs=n_jobs,
+        device=device,
+        **_metric_kwargs(X, metric),
+    ).ravel()
+    return array("i", np.argsort(distance_to_ave)[::-1][:n_groups].tolist())
+
+
+def _farthest_pair_start(distance_matrix: np.ndarray) -> array[int]:
+    """Start of the original Kennard–Stone algorithm (single group).
+
+    Returns ``i`` of the most distant pair ``(i, j)`` (the first maximum in
+    row-major order). Greedy selection from ``i`` picks ``j`` next, because
+    ``distance_matrix[i, j]`` is the global maximum and ``j`` is the first
+    maximum in row ``i``. Hence the first two selected samples are the most
+    distant pair.
+    """
+    i, _ = np.unravel_index(np.argmax(distance_matrix), distance_matrix.shape)
+    return array("i", (int(i),))
+
+
+def _greedy_select(
+    distance_matrix: np.ndarray,
+    initial_indexes: array[int],
+    n_groups: int,
+) -> list[array[int]]:
+    """Greedily assign samples to groups by the max-min distance criterion.
+
+    Starting from ``initial_indexes`` (one per group), each group in turn
+    takes the remaining sample whose distance to its nearest already-selected
+    sample in that group is the largest.
+
+    Returns
+    -------
+    list[array[int]]
+        For each group, indexes in reverse order of selection.
+    """
+    n_samples = distance_matrix.shape[0]
+    distance_min = distance_matrix[initial_indexes, :]
+
+    # params
+    indexes_selected = initial_indexes
+    lst_indexes_selected_prev: list[array[int]] = [
+        array("L") for _ in range(n_groups)
+    ]
+    indexes_remaining_prev = array("L", range(n_samples))
+
+    # Values used after the loop when it runs zero times
+    # (n_samples == n_groups): each group holds only its initial sample.
+    lst_indexes_selected = lst_indexes_selected_prev
+    indexes_selected_next = indexes_selected
+    n_remaining = n_samples - len(indexes_selected)
+
+    for _ in range(n_samples // n_groups + bool(n_samples % n_groups) - 1):
+        # collect the current indexes
+        indexes_remaining: array[int] = array("L")
+        arg_selected: array[int] = array("L")
+        for j, idx in enumerate(indexes_remaining_prev):
+            if idx in set(indexes_selected):
+                arg_selected.append(j)
+            else:
+                indexes_remaining.append(idx)
+        n_remaining = len(indexes_remaining)
+
+        lst_indexes_selected = [
+            indexes_selected_prev + array("L", (index_selected,))
+            for indexes_selected_prev, index_selected in zip(
+                lst_indexes_selected_prev, indexes_selected
+            )
         ]
-        indexes_remaining_prev = array("L", range(n_samples))
+        # /collect the current indexes
 
-        for _ in range(
-            n_samples // self.n_groups + bool(n_samples % self.n_groups) - 1
-        ):
-            # collect the current indexes
-            indexes_remaining: array[int] = array("L")
-            arg_selected: array[int] = array("L")
-            for j, idx in enumerate(indexes_remaining_prev):
-                if idx in set(indexes_selected):
-                    arg_selected.append(j)
-                else:
-                    indexes_remaining.append(idx)
-            n_remaining = len(indexes_remaining)
+        # 代表長さを決定する
+        distance_selected: np.ndarray = distance_matrix[
+            np.ix_(indexes_selected, indexes_remaining)
+        ]
+        distance_min = np.delete(distance_min, arg_selected, axis=1)
 
-            lst_indexes_selected = [
-                indexes_selected_prev + array("L", (index_selected,))
-                for indexes_selected_prev, index_selected in zip(
-                    lst_indexes_selected_prev, indexes_selected
-                )
-            ]
-            # /collect the current indexes
-
-            # 代表長さを決定する
-            distance_selected: np.ndarray = self.distance_matrix[
-                np.ix_(indexes_selected, indexes_remaining)
-            ]
-            distance_min = np.delete(distance_min, arg_selected, axis=1)
-
-            distance_min = np.min(
-                np.concatenate(
-                    [
-                        distance_selected.reshape(self.n_groups, 1, -1),
-                        distance_min.reshape(self.n_groups, 1, -1),
-                    ],
-                    axis=1,
-                ),
+        distance_min = np.min(
+            np.concatenate(
+                [
+                    distance_selected.reshape(n_groups, 1, -1),
+                    distance_min.reshape(n_groups, 1, -1),
+                ],
                 axis=1,
-            )
+            ),
+            axis=1,
+        )
 
-            # まだ選択されていない各サンプルにおいて、これまで選択されたすべてのサンプルとの間で
-            # ユークリッド距離を計算し，その最小の値を「代表長さ」とする．
+        # まだ選択されていない各サンプルにおいて、これまで選択されたすべてのサンプルとの間で
+        # ユークリッド距離を計算し，その最小の値を「代表長さ」とする．
 
-            _st_arg_delete: set[int] = set()
-            indexes_selected_next: array[int] = array("L")
-            for k in range(self.n_groups):
-                if k == 0:
-                    arg_delete = np.argmax(
+        _st_arg_delete: set[int] = set()
+        indexes_selected_next: array[int] = array("L")
+        for k in range(n_groups):
+            if k == 0:
+                arg_delete = np.argmax(
+                    distance_min[k],
+                ).item()
+            elif 0 < n_remaining - k:
+                sorted_args = array(
+                    "L",
+                    np.argsort(
                         distance_min[k],
-                    ).item()
-                elif 0 < n_remaining - k:
-                    sorted_args = array(
-                        "L",
-                        np.argsort(
-                            distance_min[k],
-                        ).tolist(),
-                    )
-                    # 最大値を取るサンプル (代表長さが最も大きい) のindex_numberを保存
-                    for j in range(n_remaining - k, -1, -1):
-                        arg_delete = sorted_args[j]
-                        if arg_delete not in _st_arg_delete:
-                            break
-                else:
-                    break
+                    ).tolist(),
+                )
+                # 最大値を取るサンプル (代表長さが最も大きい) のindex_numberを保存
+                for j in range(n_remaining - k, -1, -1):
+                    arg_delete = sorted_args[j]
+                    if arg_delete not in _st_arg_delete:
+                        break
+            else:
+                break
 
-                _st_arg_delete.add(arg_delete)
-                index_selected: int = indexes_remaining[arg_delete]
+            _st_arg_delete.add(arg_delete)
+            index_selected: int = indexes_remaining[arg_delete]
 
-                indexes_selected_next.append(index_selected)
+            indexes_selected_next.append(index_selected)
 
-            indexes_selected = indexes_selected_next
-            lst_indexes_selected_prev = lst_indexes_selected
-            indexes_remaining_prev = indexes_remaining
-        else:  # もうないなら遠い順から近い順 (test側) に並べ替えて終える
-            assert n_remaining - len(indexes_selected_next) <= 0
-            indexes_output: list[array[int]] = []
-            for k in range(self.n_groups):
-                indexes_selected_reversed = lst_indexes_selected[k][::-1]
-                if k < len(indexes_selected_next):
-                    index_selected_next = indexes_selected_next[k]
-                    indexes_output.append(
-                        array("L", (index_selected_next,))
-                        + indexes_selected_reversed
-                    )
-                else:
-                    indexes_output.append(indexes_selected_reversed)
-            return indexes_output
+        indexes_selected = indexes_selected_next
+        lst_indexes_selected_prev = lst_indexes_selected
+        indexes_remaining_prev = indexes_remaining
+    # もうないなら遠い順から近い順 (test側) に並べ替えて終える
+    assert n_remaining - len(indexes_selected_next) <= 0
+    indexes_output: list[array[int]] = []
+    for k in range(n_groups):
+        indexes_selected_reversed = lst_indexes_selected[k][::-1]
+        if k < len(indexes_selected_next):
+            index_selected_next = indexes_selected_next[k]
+            indexes_output.append(
+                array("L", (index_selected_next,)) + indexes_selected_reversed
+            )
+        else:
+            indexes_output.append(indexes_selected_reversed)
+    return indexes_output
 
 
 if __name__ == "__main__":

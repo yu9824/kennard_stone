@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import importlib.util
 
 from ..logging import get_child_logger
