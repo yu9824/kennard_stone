@@ -175,8 +175,10 @@ def _gpu_distance_rows(X, metric, device):
     X_tensor = torch.tensor(X, dtype=torch.float32, device=device)
 
     def distance_rows(rows: np.ndarray, cols: np.ndarray) -> np.ndarray:
-        rows_t = torch.as_tensor(rows, device=device)
-        cols_t = torch.as_tensor(cols, device=device)
+        # Index arrays come from array("L") (unsigned), which torch does
+        # not accept as indices.
+        rows_t = torch.as_tensor(rows.astype(np.int64), device=device)
+        cols_t = torch.as_tensor(cols.astype(np.int64), device=device)
         return (
             torch.cdist(X_tensor[rows_t], X_tensor[cols_t], p=p).cpu().numpy()
         )

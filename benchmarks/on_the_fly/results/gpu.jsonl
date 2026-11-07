@@ -1,0 +1,14 @@
+{"impl": "core", "mode": "gpu", "device": "mps", "n_samples": 1000, "n_groups": 1, "seconds": 0.34, "peak_rss_mb": 388.0, "rss_increase_mb": 12.2, "result": "9b7999f88b0e"}
+{"impl": "prototype", "mode": "gpu", "device": "mps", "n_samples": 1000, "n_groups": 1, "seconds": 5.89, "peak_rss_mb": 2504.4, "rss_increase_mb": 1730.7, "result": "9b7999f88b0e"}
+{"impl": "core", "mode": "gpu", "device": "mps", "n_samples": 5000, "n_groups": 1, "seconds": 1.28, "peak_rss_mb": 482.3, "rss_increase_mb": 105.8, "result": "1c5a0af0205d"}
+{"impl": "prototype", "mode": "gpu", "device": "mps", "n_samples": 5000, "n_groups": 1, "seconds": 107.76, "peak_rss_mb": 2839.5, "rss_increase_mb": 2066.5, "result": "49069cc438df"}
+{"impl": "core", "mode": "gpu", "device": "mps", "n_samples": 10000, "n_groups": 1, "seconds": 4.87, "peak_rss_mb": 770.6, "rss_increase_mb": 393.9, "result": "b5e73e2bc04d"}
+{"impl": "prototype", "mode": "gpu", "device": "mps", "n_samples": 10000, "n_groups": 1, "seconds": 470.7, "peak_rss_mb": 5390.3, "rss_increase_mb": 4616.8, "result": "9e834026a5b9"}
+{"impl": "core", "mode": "gpu", "device": "mps", "n_samples": 20000, "n_groups": 1, "seconds": 20.69, "peak_rss_mb": 1921.6, "rss_increase_mb": 1543.5, "result": "e718b6eaa46a"}
+{"impl": "core", "mode": "gpu", "device": "mps", "n_samples": 1000, "n_groups": 5, "seconds": 0.07, "peak_rss_mb": 389.4, "rss_increase_mb": 12.2, "result": "f82411cd37e0"}
+{"impl": "prototype", "mode": "gpu", "device": "mps", "n_samples": 1000, "n_groups": 5, "seconds": 1.05, "peak_rss_mb": 806.1, "rss_increase_mb": 350.4, "result": "f82411cd37e0"}
+{"impl": "core", "mode": "gpu", "device": "mps", "n_samples": 5000, "n_groups": 5, "seconds": 1.03, "peak_rss_mb": 484.3, "rss_increase_mb": 106.7, "result": "1105c01ee986"}
+{"impl": "prototype", "mode": "gpu", "device": "mps", "n_samples": 5000, "n_groups": 5, "seconds": 8.08, "peak_rss_mb": 2538.4, "rss_increase_mb": 2083.7, "result": "7fb6a73170da"}
+{"impl": "core", "mode": "gpu", "device": "mps", "n_samples": 10000, "n_groups": 5, "seconds": 4.0, "peak_rss_mb": 775.2, "rss_increase_mb": 398.5, "result": "f8bad3591b96"}
+{"impl": "prototype", "mode": "gpu", "device": "mps", "n_samples": 10000, "n_groups": 5, "seconds": 24.73, "peak_rss_mb": 4699.4, "rss_increase_mb": 4245.1, "result": "96631b3e804d"}
+{"impl": "core", "mode": "gpu", "device": "mps", "n_samples": 20000, "n_groups": 5, "seconds": 16.26, "peak_rss_mb": 1928.8, "rss_increase_mb": 1549.5, "result": "d4afe4a00e34"}
