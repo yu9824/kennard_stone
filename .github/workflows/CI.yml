@@ -54,6 +54,7 @@ jobs:
               - 'docs_src/**'
               - '.github/workflows/CI.yml'
               - '.github/workflows/docs.yml'
+              - '.github/scripts/check_notebook_pairs.py'
               - 'pyproject.toml'
 
   test:
@@ -93,6 +94,10 @@ jobs:
     - name: Install dependencies
       run: |
         pip install ".[docs]"
+    - name: Check that notebooks match their .py files
+      run: |
+        pip install jupytext
+        python .github/scripts/check_notebook_pairs.py docs_src
     - name: sphinx-apidoc
       run: |
         sphinx-apidoc -f -o ./docs_src ./src/kennard_stone --module-first
