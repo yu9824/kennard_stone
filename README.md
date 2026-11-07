@@ -5,7 +5,7 @@
 [![PyPI version](https://badge.fury.io/py/kennard-stone.svg)](https://pypi.org/project/kennard-stone/)
 [![Downloads](https://static.pepy.tech/badge/kennard-stone)](https://pepy.tech/project/kennard-stone)
 
-[![Test on each version](https://github.com/yu9824/kennard_stone/actions/workflows/pytest-on-each-version.yaml/badge.svg)](https://github.com/yu9824/kennard_stone/actions/workflows/pytest-on-each-version.yaml)
+[![CI](https://github.com/yu9824/kennard_stone/actions/workflows/CI.yml/badge.svg)](https://github.com/yu9824/kennard_stone/actions/workflows/CI.yml)
 [![docs](https://github.com/yu9824/kennard_stone/actions/workflows/docs.yml/badge.svg)](https://github.com/yu9824/kennard_stone/actions/workflows/docs.yml)
 [![release-pypi](https://github.com/yu9824/kennard_stone/actions/workflows/release-pypi.yml/badge.svg)](https://github.com/yu9824/kennard_stone/actions/workflows/release-pypi.yml)
 
