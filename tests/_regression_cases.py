@@ -6,10 +6,12 @@ Two kinds of references are used:
   (``_legacy_v3_0_2``) in the same environment. How (near-)ties are broken
   depends on numpy / scikit-learn versions, so these results are not
   portable across environments, but must match the legacy code exactly.
-- ``EXACT_CASES`` use integer-valued data with ``scale=False``, so distances
-  are computed exactly and the expected output (including tie-breaking) is
-  portable. They are pinned in ``tests/data/regression_snapshot.json``,
-  generated with v3.0.2 by ``tests/data/generate_regression_snapshot.py``.
+- ``EXACT_CASES`` use integer-valued data with ``scale=False`` and no tied
+  distances, so the expected output is portable. They are pinned in
+  ``tests/data/regression_snapshot.json``, generated with v3.0.2 by
+  ``tests/data/generate_regression_snapshot.py``. Tied distances must be
+  avoided even with exact integer data, because the order of ties from
+  ``np.argsort`` depends on the numpy version and CPU (SIMD sorting).
 """
 
 from __future__ import annotations
@@ -18,6 +20,7 @@ import itertools
 from typing import Any
 
 import numpy as np
+from scipy.spatial.distance import cdist, pdist
 from sklearn.datasets import load_diabetes
 
 from kennard_stone._core._core import _KennardStone
@@ -56,6 +59,28 @@ def _small() -> np.ndarray:
     )
 
 
+def _distinct() -> np.ndarray:
+    # Integer data whose pairwise distances and distances to the mean are
+    # all distinct for euclidean, manhattan and chebyshev (see ``has_ties``).
+    return np.array(
+        [
+            [847, 431, 448],
+            [850, 99, 984],
+            [177, 755, 797],
+            [659, 147, 910],
+            [423, 288, 961],
+            [265, 697, 639],
+            [544, 543, 714],
+            [244, 151, 675],
+            [510, 459, 882],
+            [183, 28, 802],
+            [128, 128, 932],
+            [53, 901, 550],
+        ],
+        dtype=float,
+    )
+
+
 DATASETS = {
     "diabetes": _diabetes,
     "diabetes_odd": lambda: _diabetes()[:-1],
@@ -64,6 +89,7 @@ DATASETS = {
     "grid": _grid,
     "grid_dup": _grid_with_duplicates,
     "small": _small,
+    "distinct": _distinct,
 }
 
 # (case name, dataset, kwargs for _KennardStone)
@@ -114,12 +140,38 @@ CORE_CASES: list[tuple[str, str, dict[str, Any]]] = [
         (f"small-noscale-g{g}", "small", {"n_groups": g, "scale": False})
         for g in (1, 2)
     ),
+    *(
+        (
+            f"distinct-{m}-noscale-g{g}",
+            "distinct",
+            {"n_groups": g, "metric": m, "scale": False},
+        )
+        for m in ("euclidean", "manhattan", "chebyshev")
+        for g in (1, 2, 3)
+    ),
 ]
 
 
-EXACT_CASES = [
-    case for case in CORE_CASES if case[1] in ("grid", "grid_dup", "small")
-]
+EXACT_CASES = [case for case in CORE_CASES if case[1] == "distinct"]
+
+_SCIPY_METRIC = {"manhattan": "cityblock"}
+
+
+def has_ties(X: np.ndarray, metric: str) -> bool:
+    """Whether any pairwise distances or distances to the mean are tied.
+
+    Without such ties, every comparison in the selection is strict, so the
+    result does not depend on how ``np.argsort`` orders equal values.
+    """
+    metric = _SCIPY_METRIC.get(metric, metric)
+    for d in (
+        pdist(X, metric),
+        cdist(X, X.mean(axis=0, keepdims=True), metric).ravel(),
+    ):
+        d = np.sort(d)
+        if np.any(np.diff(d) <= 1e-9 * d[-1]):
+            return True
+    return False
 
 
 def run_core_case(

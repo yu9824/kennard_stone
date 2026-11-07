@@ -12,6 +12,7 @@ from _regression_cases import (
     CORE_CASES,
     DATASETS,
     EXACT_CASES,
+    has_ties,
     run_core_case,
 )
 
@@ -39,6 +40,8 @@ def test_core_matches_legacy(name, dataset, kwargs):
     ("name", "dataset", "kwargs"), EXACT_CASES, ids=_ids(EXACT_CASES)
 )
 def test_exact_cases_match_snapshot(name, dataset, kwargs):
+    # The snapshot is portable only if no tie-breaking is involved.
+    assert not has_ties(DATASETS[dataset](), kwargs.get("metric", "euclidean"))
     assert run_core_case(dataset, kwargs) == SNAPSHOT["core"][name]
 
 
