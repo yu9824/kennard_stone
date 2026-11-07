@@ -1,4 +1,9 @@
-"""The selection order must not change from v3.0.2."""
+"""The selection order must not change from v3.0.2.
+
+The only exception is where v3.0.2 assigned a sample to two groups (and
+another sample to none). Such outputs were fixed in v3.1.0, so they only
+need to be valid partitions.
+"""
 
 from __future__ import annotations
 
@@ -13,6 +18,7 @@ from _regression_cases import (
     DATASETS,
     EXACT_CASES,
     has_ties,
+    is_partition,
     run_core_case,
 )
 
@@ -31,9 +37,13 @@ def _ids(cases):
     ("name", "dataset", "kwargs"), CORE_CASES, ids=_ids(CORE_CASES)
 )
 def test_core_matches_legacy(name, dataset, kwargs):
-    assert run_core_case(dataset, kwargs) == run_core_case(
-        dataset, kwargs, cls=_LegacyKennardStone
-    )
+    result = run_core_case(dataset, kwargs)
+    legacy = run_core_case(dataset, kwargs, cls=_LegacyKennardStone)
+    n_samples = len(DATASETS[dataset]())
+
+    assert is_partition(result, n_samples)
+    if is_partition(legacy, n_samples):
+        assert result == legacy
 
 
 @pytest.mark.parametrize(
