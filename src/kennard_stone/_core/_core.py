@@ -1,4 +1,5 @@
-"""
+"""Kennard–Stone splitters: KFold, KSSplit and train_test_split.
+
 Copyright © 2021 yu9824
 """
 
@@ -34,10 +35,66 @@ T = TypeVar("T")
 
 INIT_METHODS = ("farthest_from_mean", "farthest_pair")
 
-# TODO: Update docstrings
-
 
 class KFold(_BaseKFold):
+    """K-fold cross-validator based on the Kennard–Stone algorithm.
+
+    The samples are split into ``n_splits`` folds so that each fold covers
+    the feature space as evenly as possible. The folds are determined by
+    the data alone, without randomness. Use it like
+    :class:`sklearn.model_selection.KFold`, for example as ``cv`` in
+    :func:`sklearn.model_selection.cross_validate`.
+
+    Parameters
+    ----------
+    n_splits : int, default=5
+        Number of folds. Must be at least 2.
+    metric : str or callable, default="euclidean"
+        Distance metric: a name accepted by
+        :func:`sklearn.metrics.pairwise_distances`, or a callable that
+        returns a distance matrix.
+    n_jobs : int, default=None
+        Number of parallel jobs for the distance computation (CPU only).
+    device : {"cpu", "cuda", "mps"} or torch.device, default="cpu"
+        Device for the distance computation. A GPU requires PyTorch and is
+        used only for "euclidean", "manhattan", "chebyshev" and
+        "minkowski".
+    scale : bool, default=True
+        Whether to standardize the features before computing distances.
+    shuffle : None
+        Ignored, because the folds do not depend on randomness. A value
+        other than None emits a warning.
+    random_state : None
+        Ignored, like ``shuffle``.
+
+    See Also
+    --------
+    train_test_split : Split arrays into a training and a test set.
+
+    Notes
+    -----
+    Features with zero variance are dropped and, if ``scale`` is True, the
+    remaining features are standardized before computing distances.
+
+    Each fold starts from one of the ``n_splits`` samples farthest from the
+    mean of the data. The folds then take samples in turn: in each round,
+    every fold takes, among the samples not selected yet, the one whose
+    distance to its nearest sample in that fold is the largest (max-min
+    criterion).
+
+    .. versionchanged:: 4.0.0
+       With ``n_splits >= 3``, the third and later folds could skip their
+       best candidates in earlier versions.
+
+    Examples
+    --------
+    >>> from sklearn.datasets import load_diabetes
+    >>> from kennard_stone import KFold
+    >>> X, y = load_diabetes(return_X_y=True)
+    >>> for train, test in KFold(n_splits=5).split(X):
+    ...     pass
+    """
+
     def __init__(
         self,
         n_splits: int = 5,
@@ -49,37 +106,6 @@ class KFold(_BaseKFold):
         shuffle: None = None,
         random_state: None = None,
     ) -> None:
-        """Kennard–Stone based K-Fold cross-validator.
-
-        Parameters
-        ----------
-        n_splits : int, default=5
-            Number of folds. Must be at least 2.
-
-        metric : {Metrics, callable}, default="euclidean"
-            Distance metric. Either a metric name accepted by
-            ``sklearn.metrics.pairwise_distances`` /
-            ``scipy.spatial.distance.pdist`` or a callable returning an
-            ``ndarray``. With GPU ('euclidean', 'manhattan', 'chebyshev',
-            'minkowski'), ``torch.cdist`` is used.
-
-        n_jobs : int, default=None
-            Number of parallel jobs (CPU only).
-
-        device : {"cpu", "cuda", "mps"} or torch.device or str, default="cpu"
-            Device for distance matrix computation.
-
-        scale : bool, default=True
-            Whether to standardize features (``StandardScaler``) before
-            computing distances. Features with zero variance are always
-            dropped.
-
-        random_state : None, deprecated
-            No effect (algorithm is deterministic).
-
-        shuffle : None, deprecated
-            No effect (algorithm is deterministic).
-        """
         super().__init__(n_splits=n_splits, shuffle=False, random_state=None)
         self.metric = metric
         self.n_jobs = n_jobs
@@ -118,6 +144,25 @@ class KFold(_BaseKFold):
 
 
 class KSSplit(BaseShuffleSplit):
+    """Train/test splitter based on the Kennard–Stone algorithm.
+
+    Used by :func:`train_test_split`. The samples selected first form the
+    training set, and the rest form the test set.
+
+    Parameters
+    ----------
+    n_splits : int, default=1
+        Must be 1.
+    test_size : float or int, default=None
+        Same as in :func:`sklearn.model_selection.train_test_split`.
+    train_size : float or int, default=None
+        Same as in :func:`sklearn.model_selection.train_test_split`.
+    metric, n_jobs, device, scale
+        See :class:`KFold`.
+    init : {"farthest_from_mean", "farthest_pair"}, default="farthest_from_mean"
+        See :func:`train_test_split`.
+    """
+
     def __init__(
         self,
         n_splits: int = 1,
@@ -130,31 +175,6 @@ class KSSplit(BaseShuffleSplit):
         scale: bool = True,
         init: InitMethod = "farthest_from_mean",
     ):
-        """Splitting helper for train/test based on Kennard–Stone.
-
-        Parameters
-        ----------
-        n_splits : int, default=1
-            Must be 1 for this class.
-
-        test_size : float or int, default=None
-            Same semantics as ``sklearn.model_selection.train_test_split``.
-
-        train_size : float or int, default=None
-            Same semantics as ``sklearn.model_selection.train_test_split``.
-
-        metric, n_jobs, device, scale : see also ``KFold``
-
-        init : {"farthest_from_mean", "farthest_pair"}, default="farthest_from_mean"
-            How to choose the first selected samples. Selection then proceeds
-            greedily by the max-min distance criterion in both cases.
-
-            - ``"farthest_from_mean"``: start from the sample farthest from the
-              mean of the (preprocessed) data.
-            - ``"farthest_pair"``: start from the two samples with the largest
-              mutual distance, as in the original Kennard–Stone algorithm
-              (Kennard & Stone, 1969).
-        """
         super().__init__(
             n_splits=n_splits, test_size=test_size, train_size=train_size
         )
@@ -171,7 +191,7 @@ class KSSplit(BaseShuffleSplit):
     def _iter_indices(
         self, X, y=None, groups=None
     ) -> Generator[tuple[list[int], list[int]], None, None]:
-        """Internal generator. Yields train/test indices."""
+        """Yield the train and test indices."""
         ks = _KennardStone(
             n_groups=1,
             scale=self.scale,
@@ -208,49 +228,74 @@ def train_test_split(
     random_state: None = None,
     shuffle: None = None,
 ) -> list[T]:
-    """Split arrays or matrices into train and test subsets via Kennard–Stone.
+    """Split arrays into a training and a test set with Kennard–Stone.
 
-    The first input array determines the geometric order of indices so that the
-    split is as uniform as possible. All subsequent arrays are split using the
-    same indices.
+    The samples selected first by the Kennard–Stone algorithm form the
+    training set, so that it covers the feature space evenly; the rest form
+    the test set. The order is computed from the first array and applied to
+    all arrays. Use it like :func:`sklearn.model_selection.train_test_split`.
 
     Parameters
     ----------
     *arrays : sequence of indexables
-        Arrays of equal length (list, ndarray, scipy-sparse, pandas DataFrame, etc.).
-
+        Arrays of the same length (lists, ndarrays, scipy sparse matrices,
+        pandas DataFrames, ...).
     test_size : float or int, default=None
-        Proportion in [0.0, 1.0] or absolute count. If ``None``, it becomes the
-        complement of ``train_size``. If both are ``None``, defaults to 0.25.
-
+        Proportion (between 0.0 and 1.0) or number of test samples. If None,
+        the complement of ``train_size``; if both are None, 0.25.
     train_size : float or int, default=None
-        Proportion or absolute count for the train split. If ``None``, becomes
-        the complement of ``test_size``.
-
-    metric, n_jobs, device, scale : see also ``KFold``
-
+        Proportion or number of training samples. If None, the complement
+        of ``test_size``.
+    metric, n_jobs, device, scale
+        See :class:`KFold`.
     init : {"farthest_from_mean", "farthest_pair"}, default="farthest_from_mean"
-        How to choose the first selected samples. Selection then proceeds
-        greedily by the max-min distance criterion in both cases.
+        How the selection starts:
 
-        - ``"farthest_from_mean"``: start from the sample farthest from the
-          mean of the (preprocessed) data.
-        - ``"farthest_pair"``: start from the two samples with the largest
-          mutual distance, as in the original Kennard–Stone algorithm
-          (Kennard & Stone, 1969).
-
-    random_state, shuffle : None, deprecated
-        No effect (algorithm is deterministic).
+        - ``"farthest_from_mean"``: from the sample farthest from the mean
+          of the data.
+        - ``"farthest_pair"``: from the two samples farthest from each
+          other, as in the original algorithm (Kennard & Stone, 1969).
+    random_state, shuffle : None
+        Ignored, because the split does not depend on randomness. A value
+        other than None emits a warning.
 
     Returns
     -------
     list
-        A list like ``[X_train, X_test, y_train, y_test, ...]``.
+        ``[X_train, X_test, y_train, y_test, ...]``: the training and test
+        parts of each array, in order.
 
     Raises
     ------
     ValueError
-        If no input arrays are provided.
+        If no array is given.
+
+    See Also
+    --------
+    KFold : Cross-validator based on the Kennard–Stone algorithm.
+
+    Notes
+    -----
+    Features with zero variance are dropped and, if ``scale`` is True, the
+    remaining features are standardized before computing distances.
+
+    After the start given by ``init``, the algorithm repeatedly selects the
+    sample whose distance to its nearest selected sample is the largest
+    (max-min criterion).
+
+    References
+    ----------
+    R. W. Kennard and L. A. Stone, "Computer Aided Design of Experiments",
+    Technometrics, 11(1), 137–148 (1969).
+
+    Examples
+    --------
+    >>> from sklearn.datasets import load_diabetes
+    >>> from kennard_stone import train_test_split
+    >>> X, y = load_diabetes(return_X_y=True)
+    >>> X_train, X_test, y_train, y_test = train_test_split(
+    ...     X, y, test_size=0.2
+    ... )
     """
     if shuffle is not None:
         warnings.warn(
@@ -299,6 +344,21 @@ def train_test_split(
 
 
 class _KennardStone:
+    """Core of the Kennard–Stone algorithm, shared by the splitters.
+
+    Parameters
+    ----------
+    n_groups : int, default=1
+        Number of groups to split into.
+    scale : bool, default=True
+        Whether to standardize the features before computing distances.
+    metric, n_jobs, device
+        See :class:`KFold`.
+    init : {"farthest_from_mean", "farthest_pair"}, default="farthest_from_mean"
+        See :func:`train_test_split`. ``"farthest_pair"`` requires
+        ``n_groups=1``.
+    """
+
     def __init__(
         self,
         n_groups: int = 1,
@@ -308,22 +368,6 @@ class _KennardStone:
         device: Device = "cpu",
         init: InitMethod = "farthest_from_mean",
     ) -> None:
-        """Internal class implementing the core of the Kennard–Stone algorithm.
-
-        Parameters
-        ----------
-        n_groups : int, default=1
-            Number of groups to split into.
-
-        scale : bool, default=True
-            Whether to standardize features before computing distances.
-
-        metric, n_jobs, device : see also ``KFold``
-
-        init : {"farthest_from_mean", "farthest_pair"}, default="farthest_from_mean"
-            See ``train_test_split``. ``"farthest_pair"`` requires
-            ``n_groups=1``.
-        """
         self.n_groups = n_groups
         self.scale = scale
         self.metric = metric
@@ -409,8 +453,11 @@ def _preprocess(X: np.ndarray, scale: bool) -> np.ndarray:
 
 
 def _metric_kwargs(X: np.ndarray, metric: MetricLike) -> dict[str, Any]:
-    """Extra parameters so that distances to a single point (the mean) use
-    the statistics of the whole ``X``."""
+    """Return metric parameters computed from the whole ``X``.
+
+    Distances to a single point (the mean) must use the statistics of all
+    samples, which the metric could not estimate from that point alone.
+    """
     if metric == "mahalanobis":
         return {"VI": np.linalg.inv(np.cov(X, rowvar=False))}
     if metric == "seuclidean":
@@ -426,8 +473,10 @@ def _farthest_from_mean(
     n_jobs: int | None,
     device: Device,
 ) -> array[int]:
-    """Indexes of the ``n_groups`` samples farthest from the mean of ``X``,
-    in descending order of distance."""
+    """Return the ``n_groups`` samples farthest from the mean of ``X``.
+
+    The indexes are in descending order of distance.
+    """
     distance_to_ave = pairwise_distances(
         X,
         X.mean(axis=0, keepdims=True),

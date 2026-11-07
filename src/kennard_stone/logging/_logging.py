@@ -20,7 +20,7 @@ HANDLER = TypeVar("HANDLER", bound=Handler)
 
 
 def _color_supported() -> bool:
-    """Detection of color support."""
+    """Return whether colored log output is supported."""
     if not importlib.util.find_spec("colorlog"):
         return False
 
@@ -32,14 +32,11 @@ def _color_supported() -> bool:
 
 
 _default_handler: StreamHandler | None = None
-"""default root logger handler
-
-if not configured, None
-"""
+"""Default handler of the library root logger (None until configured)."""
 
 
 def _get_root_logger_name() -> str:
-    """get root logger name (library name)
+    """Get the root logger name (the library name).
 
     Returns
     -------
@@ -50,7 +47,7 @@ def _get_root_logger_name() -> str:
 
 
 def create_default_formatter() -> Formatter:
-    """create default formatter
+    """Create the default formatter.
 
     Returns
     -------
@@ -70,27 +67,27 @@ def create_default_formatter() -> Formatter:
 
 
 default_formatter: Formatter = create_default_formatter()
-"""default formatter"""
+"""Default formatter."""
 
 
 def get_handler(
     handler: HANDLER, formatter: Formatter | None = None, level=NOTSET
 ) -> HANDLER:
-    """configure handler in an easy api
+    """Configure a handler with a formatter and a level.
 
     Parameters
     ----------
-    handler : HANDLER
-
-    formatter : Formatter | None, optional
-        , by default None
-    level : _type_, optional
-        , by default NOTSET
+    handler : logging.Handler
+        Handler to configure.
+    formatter : logging.Formatter, default=None
+        Formatter to set. If None, the default formatter is used.
+    level : int, default=logging.NOTSET
+        Level to set.
 
     Returns
     -------
-    HANDLER
-
+    logging.Handler
+        The given handler, configured.
     """
     handler.setLevel(level)
     handler.setFormatter(
@@ -120,7 +117,7 @@ def _configure_library_root_logger() -> None:
 
 
 def get_root_logger() -> Logger:
-    """get library root logger of this package
+    """Get the root logger of this library.
 
     Returns
     -------
@@ -133,25 +130,25 @@ def get_root_logger() -> Logger:
 
 
 def get_child_logger(name: str, propagate: bool = True) -> Logger:
-    """get logger
+    """Get a child logger of the library root logger.
 
     Parameters
     ----------
     name : str
-        You shold assign '__name__'
-
-    propagate : bool
-        propagate to parent handler or not, by default True
+        Name of the module, usually ``__name__``. It must be a submodule of
+        kennard_stone or "__main__".
+    propagate : bool, default=True
+        Whether to propagate records to the handlers of the parent logger.
 
     Returns
     -------
-    Logger
-        child logger
+    logging.Logger
+        Child logger.
 
     Raises
     ------
     ValueError
-
+        If ``name`` is neither a submodule of kennard_stone nor "__main__".
     """
     root_logger = get_root_logger()
 
@@ -168,7 +165,7 @@ def get_child_logger(name: str, propagate: bool = True) -> Logger:
 
 
 def enable_default_handler() -> None:
-    """enable default handler"""
+    """Enable the default handler."""
     _configure_library_root_logger()
 
     assert _default_handler is not None
@@ -176,7 +173,7 @@ def enable_default_handler() -> None:
 
 
 def disable_default_handler() -> None:
-    """disable default handler"""
+    """Disable the default handler."""
     _configure_library_root_logger()
 
     assert _default_handler is not None
@@ -184,15 +181,14 @@ def disable_default_handler() -> None:
 
 
 class catch_default_handler:
-    """catch default handler
+    """Disable the default handler temporarily, as a context manager.
 
-    Example
-    -------
+    Examples
+    --------
     >>> _logger = get_child_logger(__name__)
     >>> with catch_default_handler():
-    >>>    _logger.info("not log")
-    >>> _logger.info("log")
-
+    ...     _logger.info("not logged")
+    >>> _logger.info("logged")
     """
 
     def __enter__(self) -> None:

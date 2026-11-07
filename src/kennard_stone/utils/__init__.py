@@ -1,3 +1,5 @@
+"""Distance computation and helpers."""
+
 from ._pairwise import is_installed, pairwise_distances
 
 __all__ = (
