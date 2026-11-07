@@ -35,13 +35,13 @@ classifiers = [
 test = ["pytest", "pandas"]
 dev = ["build"]
 optional = ["colorlog", "torch", "torchvision", "torchaudio"]
-example = ["tqdm", "jupyter", "pandas"]
+example = ["jupyter", "matplotlib", "pandas", "seaborn", "tqdm"]
 docs = ["sphinx", "myst-parser", "myst-nb", "sphinx-book-theme"]
 gui = ["TkEasyGUI"]
 
 [project.urls]
 Homepage = "https://github.com/yu9824/kennard_stone"
-# Documentation = "https://readthedocs.org"
+Documentation = "https://yu9824.github.io/kennard_stone/"
 PyPI = "https://pypi.org/project/kennard-stone/"
 Source = "https://github.com/yu9824/kennard_stone"
 Tracker = "https://github.com/yu9824/kennard_stone/issues"
