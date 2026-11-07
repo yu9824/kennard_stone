@@ -25,6 +25,10 @@ jobs:
         run: |
           pip install ".[docs]"
       - name: sphinx-apidoc
+        env:
+          # Without show-inheritance: the base classes are private to
+          # scikit-learn (e.g. _BaseKFold).
+          SPHINX_APIDOC_OPTIONS: members,undoc-members
         run: |
           sphinx-apidoc -f -o ./docs_src ./src/kennard_stone --module-first
       - name: Sphinx build

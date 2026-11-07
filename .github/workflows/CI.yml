@@ -99,8 +99,13 @@ jobs:
         pip install jupytext
         python .github/scripts/check_notebook_pairs.py docs_src
     - name: sphinx-apidoc
+      env:
+        # Without show-inheritance: the base classes are private to
+        # scikit-learn (e.g. _BaseKFold).
+        SPHINX_APIDOC_OPTIONS: members,undoc-members
       run: |
         sphinx-apidoc -f -o ./docs_src ./src/kennard_stone --module-first
     - name: Sphinx build
+      # Treat warnings as errors to catch broken docstrings.
       run: |
-        sphinx-build -b html ./docs_src ./docs
+        sphinx-build -W --keep-going -b html ./docs_src ./docs
