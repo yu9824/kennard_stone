@@ -246,6 +246,10 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 ```
 
+Note: the CI has no GPU, so the GPU code path is not tested there.
+The GPU tests in `tests/gpu` run only on a machine with PyTorch and an available GPU (CUDA or Apple MPS), and are skipped otherwise.
+If you find a problem with the GPU path, please open an issue.
+
 
 ## LICENSE
 
