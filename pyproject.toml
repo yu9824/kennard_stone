@@ -1,6 +1,7 @@
 # https://packaging.python.org/ja/latest/guides/writing-pyproject-toml/
 [build-system]
-requires = ["setuptools"]
+# The version is derived from git tags by setuptools-scm.
+requires = ["setuptools>=77.0.3", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -54,8 +55,9 @@ Changelog = "https://github.com/yu9824/kennard_stone/blob/main/CHANGELOG.md"
 [tool.setuptools]
 package-dir = { "" = "src" }
 
-[tool.setuptools.dynamic]
-version = { attr = "kennard_stone.__version__" }
-
 [tool.setuptools.packages.find]
 where = ["src/"]
+
+# No version file is written; kennard_stone.__version__ reads the installed
+# package metadata.
+[tool.setuptools_scm]
