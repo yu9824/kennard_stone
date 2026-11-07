@@ -22,6 +22,7 @@ def _cells(path: Path) -> list[tuple[str, str]]:
 
 
 def main(root: str) -> int:
+    """Return 1 if any notebook under ``root`` differs from its pair."""
     errors = []
     for ipynb in sorted(Path(root).rglob("*.ipynb")):
         if ".ipynb_checkpoints" in ipynb.parts:

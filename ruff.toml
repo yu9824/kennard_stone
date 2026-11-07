@@ -21,6 +21,7 @@ select = [
     "PIE", # flake8-pie
     "PYI", # flake8-pyi
     "RUF", # ruff-specific rules
+    "D",   # pydocstyle (numpydoc convention below)
 ]
 ignore = [
     # Docstrings and comments intentionally use characters such as the
@@ -32,10 +33,12 @@ ignore = [
 unfixable = ["F401"]
 
 [lint.pydocstyle]
-# Docstrings follow the numpydoc style. This takes effect once the "D"
-# rules are selected.
+# Docstrings follow the numpydoc style.
 convention = "numpy"
 
 [lint.per-file-ignores]
+# Docstrings are required for the package, not for tests and notebooks.
+"tests/**" = ["D"]
+"docs_src/**" = ["D"]
 # Literals redundant with str are kept to show the common device names.
 "src/kennard_stone/utils/_type_alias.py" = ["PYI051"]
