@@ -12,11 +12,8 @@ clear Sphinx rendering.
 
 from __future__ import annotations
 
-# NOTE: Type aliases below are evaluated at runtime, so they must keep using
-# ``typing.Union`` / ``typing.Callable`` instead of ``X | Y`` /
-# ``collections.abc.Callable[...]`` while Python 3.8 and 3.9 are supported.
-# Switch to the PEP 604 / PEP 585 syntax after dropping Python 3.8 and 3.9.
-from typing import Callable, Literal, TypeAlias, Union
+from collections.abc import Callable
+from typing import Literal, TypeAlias
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -26,11 +23,9 @@ from ._utils import is_installed
 if is_installed("torch"):
     import torch  # type: ignore
 
-    Device: TypeAlias = Union[
-        "torch.device", str, Literal["cpu", "cuda", "mps"]
-    ]
+    Device: TypeAlias = torch.device | str | Literal["cpu", "cuda", "mps"]
 else:
-    Device: TypeAlias = Union[str, Literal["cpu"]]  # type: ignore[misc,no-redef]
+    Device: TypeAlias = str | Literal["cpu"]  # type: ignore[misc,no-redef]
 
 Metrics: TypeAlias = Literal[
     "cityblock",
@@ -57,9 +52,7 @@ Metrics: TypeAlias = Literal[
     "yule",
 ]
 
-MetricLike: TypeAlias = Union[
-    Metrics, Callable[[ArrayLike, ArrayLike], np.ndarray]
-]
+MetricLike: TypeAlias = Metrics | Callable[[ArrayLike, ArrayLike], np.ndarray]
 """Metric name or a callable returning a distance matrix."""
 
 InitMethod: TypeAlias = Literal["farthest_from_mean", "farthest_pair"]

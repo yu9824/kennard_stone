@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from functools import lru_cache
+from functools import cache
 from inspect import signature
 from typing import Any
 
 
-@lru_cache(maxsize=None)
+@cache
 def _accepted_parameters(func: Callable[..., Any]) -> frozenset[str]:
     return frozenset(signature(func).parameters)
 
