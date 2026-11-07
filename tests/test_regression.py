@@ -1,8 +1,10 @@
-"""The selection order must not change from v3.0.2.
+"""The selection order must not change from v3.0.2 for up to two groups.
 
-The only exception is where v3.0.2 assigned a sample to two groups (and
-another sample to none). Such outputs were fixed in v3.1.0, so they only
-need to be valid partitions.
+With three or more groups, v4.0.0 changed the selection (the third and later
+groups took a sample other than their best free one), so those cases are
+checked against the max-min criterion in ``test_max_min.py`` instead. Where
+v3.0.2 assigned a sample to two groups (fixed in v3.1.0), the result only
+needs to be a valid partition.
 """
 
 from __future__ import annotations
@@ -14,9 +16,9 @@ import numpy as np
 import pytest
 from _legacy_v3_0_2 import _KennardStone as _LegacyKennardStone
 from _regression_cases import (
-    CORE_CASES,
     DATASETS,
     EXACT_CASES,
+    LEGACY_CASES,
     has_ties,
     is_partition,
     run_core_case,
@@ -34,7 +36,7 @@ def _ids(cases):
 
 
 @pytest.mark.parametrize(
-    ("name", "dataset", "kwargs"), CORE_CASES, ids=_ids(CORE_CASES)
+    ("name", "dataset", "kwargs"), LEGACY_CASES, ids=_ids(LEGACY_CASES)
 )
 def test_core_matches_legacy(name, dataset, kwargs):
     result = run_core_case(dataset, kwargs)
@@ -70,7 +72,7 @@ def test_train_test_split_matches_legacy(test_size, n_test):
     assert train.tolist() == order[n_test:]
 
 
-@pytest.mark.parametrize("n_splits", [2, 5])
+@pytest.mark.parametrize("n_splits", [2])
 def test_kfold_matches_legacy(n_splits):
     X = DATASETS["diabetes"]()
     folds = run_core_case(
