@@ -80,9 +80,15 @@ def pairwise_distances(
 
     if available_torch:
         # Convert NumPy array to PyTorch tensor and move it to GPU
-        X_tensor = torch.tensor(X, dtype=torch.float32, device=device)
+        # np.asarray accepts the same inputs as the scikit-learn path
+        # (e.g. pandas DataFrame), which torch.tensor does not.
+        X_tensor = torch.tensor(
+            np.asarray(X), dtype=torch.float32, device=device
+        )
         if Y is not None:
-            Y_tensor = torch.tensor(Y, dtype=torch.float32, device=device)
+            Y_tensor = torch.tensor(
+                np.asarray(Y), dtype=torch.float32, device=device
+            )
         else:
             Y_tensor = X_tensor
 
