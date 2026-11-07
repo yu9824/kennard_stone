@@ -143,14 +143,13 @@ If these arguments are included, they do not cause an error. They simply have no
 If you want to run the notebook in examples directory,
 you will need to additionally install `pandas`, `matplotlib`, `seaborn`, `tqdm`, and `jupyter` other than the packages in requirements.txt.
 
-## Upcoming changes in v4.0.0
+## Changes in v4.0.0
 
-- `KFold` with `n_splits >= 3` will return different folds.
-  Each fold should take the remaining sample farthest from its own selected samples,
-  but the current implementation can skip the best candidates for the third and later folds.
-  v4.0.0 fixes this.
+- `KFold` with `n_splits >= 3` returns different folds from v3.
+  Each fold takes the remaining sample farthest from its own selected samples,
+  but in v3 the third and later folds could skip their best candidates.
   `KFold` with `n_splits=2` and `train_test_split` are not affected.
-  To keep the current folds, use `kennard-stone<4`.
+  To reproduce the folds of v3, use `kennard-stone<4`.
 - Python 3.8 and 3.9 will no longer be supported.
 
 Since v3.1.0, `KFold` no longer puts a sample in two test folds (which left another sample in none).
