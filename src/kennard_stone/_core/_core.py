@@ -122,8 +122,8 @@ class KSSplit(BaseShuffleSplit):
         self,
         n_splits: int = 1,
         *,
-        test_size: float | int | None = None,
-        train_size: float | int | None = None,
+        test_size: float | int | None = None,  # noqa: PYI041
+        train_size: float | int | None = None,  # noqa: PYI041
         metric: MetricLike = "euclidean",
         n_jobs: int | None = None,
         device: Device = "cpu",
@@ -198,8 +198,8 @@ class KSSplit(BaseShuffleSplit):
 
 def train_test_split(
     *arrays: T,
-    test_size: float | int | None = None,
-    train_size: float | int | None = None,
+    test_size: float | int | None = None,  # noqa: PYI041
+    train_size: float | int | None = None,  # noqa: PYI041
     metric: MetricLike = "euclidean",
     n_jobs: int | None = None,
     device: Device = "cpu",
