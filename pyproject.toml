@@ -36,7 +36,7 @@ test = ["pytest", "pandas"]
 dev = ["build"]
 optional = ["colorlog", "torch", "torchvision", "torchaudio"]
 example = ["tqdm", "jupyter", "pandas"]
-docs = ["sphinx", "sphinx_rtd_theme", "sphinx-markdown-tables", "recommonmark"]
+docs = ["sphinx", "myst-parser", "myst-nb", "sphinx-book-theme"]
 gui = ["TkEasyGUI"]
 
 [project.urls]
